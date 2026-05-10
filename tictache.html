@@ -328,14 +328,14 @@
             </div>
         </div>
 
-        <!-- Center Clock -->
-        <div id="clock-container" class="hidden md:flex items-center gap-4 px-6 py-1.5 bg-black/40 border border-white/5 rounded-full h-9">
-            <div class="flex items-baseline gap-1">
-                <span id="current-time" class="text-lg font-black text-white tabular-nums tracking-tighter">00:00</span>
-                <span id="current-seconds" class="text-[10px] font-bold text-yellow-500 tabular-nums w-4">00</span>
+        <!-- Center Clock: Modern HUD Interface -->
+        <div id="clock-container">
+            <div class="time-block">
+                <span id="current-time">00:00</span>
+                <span id="current-seconds">00</span>
             </div>
-            <div class="w-px h-4 bg-white/10"></div>
-            <div id="current-date" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">-- --- ----</div>
+            <div class="clock-divider"></div>
+            <div id="current-date">-- --- ----</div>
         </div>
 
         <div class="flex items-center gap-3">
@@ -475,34 +475,6 @@
         return res.json();
     }
 
-    // ============================================================
-    // CLOCK
-    // ============================================================
-    function updateClock() {
-        const now = new Date();
-        const hh = String(now.getHours()).padStart(2, '0');
-        const mm = String(now.getMinutes()).padStart(2, '0');
-        const ss = String(now.getSeconds()).padStart(2, '0');
-        const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-        const formattedDate = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-
-        document.getElementById('current-time').textContent = `${hh}:${mm}`;
-        document.getElementById('current-seconds').textContent = ss;
-        document.getElementById('current-date').textContent = formattedDate;
-
-        // Day-based coloring
-        const dayIndex = now.getDay();
-        const dayColor = `var(--day-${dayIndex})`;
-        const clockContainer = document.getElementById('clock-container');
-        const secondsElement = document.getElementById('current-seconds');
-        const dateElement = document.getElementById('current-date');
-
-        if (clockContainer) clockContainer.style.borderColor = dayColor;
-        if (secondsElement) secondsElement.style.color = dayColor;
-        if (dateElement) dateElement.style.color = dayColor;
-    }
-    updateClock();
-    setInterval(updateClock, 1000);
 
     // ============================================================
     // TOAST
@@ -521,7 +493,7 @@
     // ============================================================
     // SEARCH FUNNEL
     // ============================================================
-    lucide.createIcons();
+
 
     const ttRef = document.getElementById('tt-ref');
     const ttColor = document.getElementById('tt-color');

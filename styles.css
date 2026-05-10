@@ -118,7 +118,6 @@ main {
     border-radius: 8px;
     box-shadow: none;
     border-left: 4px solid var(--primary-green);
-    transform: translate(-50%, -50%);
     transition: border-color 0.5s ease;
 }
 
@@ -136,6 +135,7 @@ main {
     font-family: var(--font-headline);
     line-height: 1;
     text-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    transition: font-size 0.1s ease-out;
 }
 
 #current-seconds {
@@ -164,15 +164,10 @@ main {
     transition: color 0.5s ease;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     #clock-container {
         display: none;
     }
-}
-
-#current-time {
-    text-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
-    transition: font-size 0.1s ease-out;
 }
 
 .header-sticker {

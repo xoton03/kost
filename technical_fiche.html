@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="navigation.js" defer></script>
+<link rel="stylesheet" href="styles.css">
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface": "#1d100a",
+            "on-secondary-fixed-variant": "#454747",
+            "surface-variant": "#41312a",
+            "surface-bright": "#46362e",
+            "surface-tint": "#ffb692",
+            "surface-container": "#2a1c16",
+            "surface-container-high": "#362720",
+            "secondary": "#c6c6c7",
+            "on-tertiary": "#2f3131",
+            "on-primary": "#562000",
+            "on-primary-container": "#582100",
+            "primary-fixed": "#ffdbcb",
+            "outline": "#a98a7c",
+            "error": "#ffb4ab",
+            "surface-container-lowest": "#170b06",
+            "background": "#1d100a",
+            "on-error": "#690005",
+            "tertiary-container": "#9a9a9a",
+            "surface-dim": "#1d100a",
+            "inverse-primary": "#9f4200",
+            "on-tertiary-fixed-variant": "#464747",
+            "tertiary-fixed-dim": "#c7c6c6",
+            "on-secondary-container": "#b4b5b5",
+            "primary-container": "#ff6d00",
+            "secondary-container": "#454747",
+            "on-tertiary-fixed": "#1a1c1c",
+            "inverse-surface": "#f7ddd2",
+            "error-container": "#93000a",
+            "on-primary-fixed": "#341100",
+            "inverse-on-surface": "#3d2d26",
+            "secondary-fixed-dim": "#c6c6c7",
+            "surface-container-highest": "#41312a",
+            "on-secondary": "#2f3131",
+            "outline-variant": "#594136",
+            "on-surface-variant": "#e2bfb0",
+            "on-surface": "#f7ddd2",
+            "tertiary-fixed": "#e3e2e2",
+            "primary": "#ffb692",
+            "on-primary-fixed-variant": "#7a3000",
+            "secondary-fixed": "#e2e2e2",
+            "primary-fixed-dim": "#ffb692",
+            "surface-container-low": "#261812",
+            "on-error-container": "#ffdad6",
+            "on-tertiary-container": "#313232",
+            "on-secondary-fixed": "#1a1c1c",
+            "on-background": "#f7ddd2",
+            "tertiary": "#c7c6c6"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "sidebar-width": "240px",
+            "margin-desktop": "32px",
+            "unit": "4px",
+            "margin-mobile": "16px",
+            "gutter": "16px"
+          },
+          "fontFamily": {
+            "headline-md-mobile": ["Space Grotesk"],
+            "label-caps": ["Space Grotesk"],
+            "display-lg": ["Space Grotesk"],
+            "body-main": ["Inter"],
+            "body-mono": ["JetBrains Mono"],
+            "headline-md": ["Space Grotesk"]
+          },
+          "fontSize": {
+            "headline-md-mobile": ["20px", {"lineHeight": "1.2", "letterSpacing": "0.08em", "fontWeight": "600"}],
+            "label-caps": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.15em", "fontWeight": "500"}],
+            "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "0.05em", "fontWeight": "700"}],
+            "body-main": ["14px", {"lineHeight": "1.5", "letterSpacing": "0em", "fontWeight": "400"}],
+            "body-mono": ["13px", {"lineHeight": "1.4", "letterSpacing": "-0.02em", "fontWeight": "400"}],
+            "headline-md": ["24px", {"lineHeight": "1.2", "letterSpacing": "0.08em", "fontWeight": "600"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .blinking-cursor::after {
+      content: '_';
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+    .industrial-grid {
+      background-image: linear-gradient(to right, #333333 1px, transparent 1px),
+                        linear-gradient(to bottom, #333333 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body-main selection:bg-primary-container selection:text-on-primary-container">
+<!-- TOP APP BAR -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-margin-mobile md:px-margin-desktop h-16 bg-surface dark:bg-surface border-b border-outline-variant dark:border-outline-variant">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary" data-icon="terminal">terminal</span>
+<h1 class="font-headline-md text-headline-md uppercase tracking-widest text-primary">TERMINAL_INV_V1.0</h1>
+</div>
+<div class="flex items-center gap-4">
+<button class="transition-colors duration-75 active:bg-primary hover:bg-primary-container hover:text-on-primary-container p-2">
+<span class="material-symbols-outlined" data-icon="settings_input_component">settings_input_component</span>
+</button>
+</div>
+<!-- Center Clock: Modern HUD Interface -->
+<div id="clock-container">
+    <div class="time-block">
+        <span id="current-time">00:00</span>
+        <span id="current-seconds">00</span>
+    </div>
+    <div class="clock-divider"></div>
+    <div id="current-date">-- --- ----</div>
+</div>
+</header>
+<!-- NAVIGATION DRAWER (DESKTOP) -->
+<aside class="fixed left-0 top-0 h-full z-40 hidden md:flex flex-col w-sidebar-width border-r border-outline-variant bg-surface">
+<div class="h-16 flex items-center px-4 border-b border-outline-variant">
+<span class="font-headline-md text-headline-md text-primary font-bold">OPERATOR_MAIN</span>
+</div>
+<nav class="flex-1 py-8">
+<ul class="space-y-1">
+<li>
+<a class="flex items-center gap-4 text-on-surface-variant px-4 py-3 opacity-70 hover:bg-surface-variant hover:text-primary transition-all duration-100 ease-in-out font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+            DASHBOARD_CMD
+          </a>
+</li>
+<li>
+<a class="flex items-center gap-4 border-l-4 border-primary bg-surface-container-high text-on-surface font-bold px-4 py-3 transition-all duration-100 ease-in-out font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+            ASSET_LOG
+          </a>
+</li>
+<li>
+<a class="flex items-center gap-4 text-on-surface-variant px-4 py-3 opacity-70 hover:bg-surface-variant hover:text-primary transition-all duration-100 ease-in-out font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+            SENSORS_OUT
+          </a>
+</li>
+<li>
+<a class="flex items-center gap-4 text-on-surface-variant px-4 py-3 opacity-70 hover:bg-surface-variant hover:text-primary transition-all duration-100 ease-in-out font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+            REPORTS_GEN
+          </a>
+</li>
+<li>
+<a class="flex items-center gap-4 text-on-surface-variant px-4 py-3 opacity-70 hover:bg-surface-variant hover:text-primary transition-all duration-100 ease-in-out font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined" data-icon="sync_alt">sync_alt</span>
+            SYSTEM_SYNC
+          </a>
+</li>
+</ul>
+</nav>
+</aside>
+<!-- MAIN CONTENT AREA -->
+<main class="md:pl-sidebar-width pt-16 pb-20 md:pb-0 min-h-screen">
+<div class="p-margin-mobile md:p-margin-desktop">
+<!-- SCAN SUCCESS FEEDBACK -->
+<div class="mb-8 border border-primary-container p-4 flex items-center justify-between bg-surface-container">
+<div class="flex items-center gap-4">
+<div class="w-2 h-10 bg-primary-container"></div>
+<div>
+<p class="font-label-caps text-label-caps text-primary uppercase">Scan_Confirmed</p>
+<p class="font-body-mono text-body-mono uppercase text-on-surface">EAN-13: 5901234123457</p>
+</div>
+</div>
+<div class="text-right">
+<p class="font-label-caps text-label-caps opacity-50">LATENCY</p>
+<p class="font-body-mono text-body-mono text-primary">0.042ms</p>
+</div>
+</div>
+<!-- THE FICHE (TECHNICAL SHEET) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-0 border border-outline-variant bg-surface-container-lowest">
+<!-- HEADER SECTION: PRODUCT IDENTITY -->
+<div class="lg:col-span-8 p-6 border-b lg:border-b-0 lg:border-r border-outline-variant">
+<div class="flex flex-col md:flex-row gap-8">
+<div class="w-full md:w-64 aspect-square bg-surface border border-outline-variant p-2 overflow-hidden">
+<img alt="Industrial sensor" class="w-full h-full object-cover grayscale contrast-125" data-alt="A high-precision industrial proximity sensor made of matte black steel and polished chrome, sitting on a dark technical workbench with faint blueprints in the background. The lighting is cold and clinical, emphasizing the rugged textures and sharp edges. The color palette is strictly monochrome with sharp orange light reflections. Professional hardware photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdCLgzJoU3N0xk9BcZjIxH9L0ZjGfJXYA6-_nMlFDgbYcfiXwagP7b4KGHqD19UItsA-hyP2qmhPLb0ioNLXwXEF2cite1El1XOprONz-b5cvCDg60rIZohPl70n1SLeipckXp0Phaa7sw4XGqejjaCtCjvJND_YlrJ4phySyqOMc9Fn66R9_PHUS5XHdyts8aRNdZcBfJIDFLhFcmu4Dax8sq20iClkPhYkC25s98n6CgfD6joQuo_jDIJiiyRg6EkuJ0z8saAUU"/>
+</div>
+<div class="flex-1">
+<span class="px-2 py-1 bg-primary text-on-primary font-label-caps text-[10px] uppercase mb-4 inline-block">Category: A-Series_Control</span>
+<h2 class="font-display-lg text-display-lg uppercase mb-2 tracking-tighter leading-none">VORTEX_PRO_S3</h2>
+<p class="font-body-mono text-body-mono text-on-surface-variant mb-6">High-frequency haptic feedback module for robotic assembly lines. Optimized for low-latency synchronization.</p>
+<div class="grid grid-cols-2 gap-4">
+<div class="border-l-2 border-outline-variant pl-4">
+<p class="font-label-caps text-label-caps opacity-50 uppercase">REF_ID</p>
+<p class="font-body-mono text-body-mono">VP-S3-992-X</p>
+</div>
+<div class="border-l-2 border-outline-variant pl-4">
+<p class="font-label-caps text-label-caps opacity-50 uppercase">BATCH_CODE</p>
+<p class="font-body-mono text-body-mono">2024_Q3_DE</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- PRICING & TRANSACTIONAL -->
+<div class="lg:col-span-4 p-6 bg-surface-container flex flex-col justify-between">
+<div>
+<p class="font-label-caps text-label-caps opacity-50 uppercase mb-2">Unit_Price_MSRP</p>
+<div class="flex items-baseline gap-2 mb-8">
+<span class="font-display-lg text-[64px] text-primary-container leading-none font-bold">1,240.00</span>
+<span class="font-headline-md text-primary-container opacity-70 uppercase">USD</span>
+</div>
+<div class="space-y-4 mb-8">
+<div class="flex justify-between border-b border-outline-variant pb-2">
+<span class="font-label-caps text-label-caps opacity-50">TAX_CLASS</span>
+<span class="font-body-mono text-body-mono">VAT_20</span>
+</div>
+<div class="flex justify-between border-b border-outline-variant pb-2">
+<span class="font-label-caps text-label-caps opacity-50">CURRENCY_LOCK</span>
+<span class="font-body-mono text-body-mono">SECURE_ACTIVE</span>
+</div>
+</div>
+</div>
+<button class="w-full bg-primary-container text-on-primary-container font-headline-md text-headline-md py-4 uppercase font-bold hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-3">
+<span class="material-symbols-outlined" data-icon="add_shopping_cart">add_shopping_cart</span>
+            ADD_TO_MANIFEST
+          </button>
+</div>
+<!-- TECHNICAL SPECIFICATIONS GRID -->
+<div class="lg:col-span-12 border-t border-outline-variant">
+<div class="bg-surface-container-high px-6 py-2 border-b border-outline-variant">
+<p class="font-label-caps text-label-caps text-primary uppercase">Tech_Specifications_Log</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+<div class="p-6 border-b md:border-b-0 md:border-r border-outline-variant">
+<p class="font-label-caps text-label-caps opacity-50 mb-2">POWER_INPUT</p>
+<p class="font-body-mono text-body-mono">24V DC / 1.5A</p>
+</div>
+<div class="p-6 border-b md:border-b-0 lg:border-r border-outline-variant">
+<p class="font-label-caps text-label-caps opacity-50 mb-2">TOLERANCE</p>
+<p class="font-body-mono text-body-mono">+/- 0.002mm</p>
+</div>
+<div class="p-6 border-b lg:border-b-0 lg:border-r border-outline-variant">
+<p class="font-label-caps text-label-caps opacity-50 mb-2">PROTOCOL</p>
+<p class="font-body-mono text-body-mono">MODBUS-TCP / MQTT</p>
+</div>
+<div class="p-6 border-outline-variant">
+<p class="font-label-caps text-label-caps opacity-50 mb-2">OPERATING_TEMP</p>
+<p class="font-body-mono text-body-mono">-20°C to +85°C</p>
+</div>
+</div>
+</div>
+<!-- STOCK LEVELS HUD -->
+<div class="lg:col-span-12 border-t border-outline-variant bg-surface">
+<div class="grid grid-cols-1 md:grid-cols-3">
+<div class="p-6 border-b md:border-b-0 md:border-r border-outline-variant">
+<div class="flex justify-between items-center mb-4">
+<p class="font-label-caps text-label-caps opacity-50 uppercase">Inventory_Current</p>
+<span class="material-symbols-outlined text-primary" data-icon="inventory">inventory</span>
+</div>
+<p class="font-display-lg text-display-lg leading-none">428 <span class="text-sm opacity-50 font-normal">UNITS</span></p>
+</div>
+<div class="p-6 border-b md:border-b-0 md:border-r border-outline-variant">
+<div class="flex justify-between items-center mb-4">
+<p class="font-label-caps text-label-caps opacity-50 uppercase">Location_Bin</p>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="location_on">location_on</span>
+</div>
+<p class="font-headline-md text-headline-md font-mono blinking-cursor">ZONE_B-RACK_12_</p>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-center mb-4">
+<p class="font-label-caps text-label-caps opacity-50 uppercase">Supply_Chain_Status</p>
+<span class="material-symbols-outlined text-primary" data-icon="trending_up">trending_up</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-full h-4 bg-surface-container-highest border border-outline-variant overflow-hidden">
+<div class="h-full bg-primary-container w-[75%]"></div>
+</div>
+<span class="font-body-mono text-body-mono">75%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- DATA GRID: RECENT TRANSFERS -->
+<div class="mt-12 border border-outline-variant">
+<div class="p-4 border-b border-outline-variant flex justify-between items-center bg-surface-container">
+<h3 class="font-label-caps text-label-caps uppercase">Transfer_History_Stream</h3>
+<span class="font-body-mono text-[10px] opacity-40">TIMESTAMP: 2024-05-24_14:22:01</span>
+</div>
+<table class="w-full text-left font-body-mono text-body-mono border-collapse">
+<thead class="bg-surface-container-high border-b border-outline-variant">
+<tr>
+<th class="px-4 py-2 font-label-caps text-label-caps opacity-50 uppercase">Operator</th>
+<th class="px-4 py-2 font-label-caps text-label-caps opacity-50 uppercase">Action</th>
+<th class="px-4 py-2 font-label-caps text-label-caps opacity-50 uppercase">Quantity</th>
+<th class="px-4 py-2 font-label-caps text-label-caps opacity-50 uppercase">Source</th>
+<th class="px-4 py-2 font-label-caps text-label-caps opacity-50 text-right uppercase">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-surface-variant transition-colors">
+<td class="px-4 py-4">OP_MARCUS_V</td>
+<td class="px-4 py-4">STOCK_IN</td>
+<td class="px-4 py-4 text-primary">+120</td>
+<td class="px-4 py-4">WH_NORTH_01</td>
+<td class="px-4 py-4 text-right">
+<span class="inline-block px-2 py-0.5 border border-primary text-[10px] text-primary uppercase">Verified</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-variant transition-colors">
+<td class="px-4 py-4">OP_SARAH_K</td>
+<td class="px-4 py-4">DISPATCH</td>
+<td class="px-4 py-4 text-error">-42</td>
+<td class="px-4 py-4">LINE_ALPHA</td>
+<td class="px-4 py-4 text-right">
+<span class="inline-block px-2 py-0.5 border border-primary text-[10px] text-primary uppercase">Verified</span>
+</td>
+</tr>
+<tr class="hover:bg-surface-variant transition-colors">
+<td class="px-4 py-4">SYS_AUTO</td>
+<td class="px-4 py-4">AUDIT_LOG</td>
+<td class="px-4 py-4 text-secondary">---</td>
+<td class="px-4 py-4">INTERNAL</td>
+<td class="px-4 py-4 text-right">
+<span class="inline-block px-2 py-0.5 border border-secondary text-[10px] text-secondary uppercase">Complete</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+<!-- BOTTOM NAV BAR (MOBILE ONLY) -->
+<footer class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 md:hidden bg-surface-container-lowest border-t border-outline-variant">
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 active:scale-95 transition-transform hover:bg-surface-container-highest">
+<span class="material-symbols-outlined" data-icon="qr_code_scanner">qr_code_scanner</span>
+<span class="font-label-caps text-[10px]">SCAN</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 active:scale-95 transition-transform hover:bg-surface-container-highest">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="font-label-caps text-[10px]">SEARCH</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary text-on-primary p-2 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="list_alt">list_alt</span>
+<span class="font-label-caps text-[10px]">LOGS</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-2 active:scale-95 transition-transform hover:bg-surface-container-highest">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+<span class="font-label-caps text-[10px]">SYS</span>
+</button>
+</footer>
+<!-- ACTION FAB -->
+<button class="fixed bottom-20 right-6 md:bottom-8 md:right-8 w-14 h-14 bg-primary-container text-on-primary-container flex items-center justify-center border-none shadow-2xl active:scale-90 transition-transform z-40">
+<span class="material-symbols-outlined" data-icon="edit" data-weight="fill" style="font-variation-settings: 'FILL' 1;">edit</span>
+</button>
+</body></html>
