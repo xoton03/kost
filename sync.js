@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (syncProgressContainer) syncProgressContainer.classList.remove('hidden');
         if (syncStatus) {
-            syncStatus.textContent = "Sychronisation...";
+            syncStatus.textContent = "Synchronisation...";
             syncStatus.classList.remove('text-red-500');
         }
 

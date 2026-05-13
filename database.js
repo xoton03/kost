@@ -15,6 +15,17 @@ db.version(3).stores({
     catalogue_articles: "gencod, ref_article, libelle, couleur, taille"
 });
 
+// Safeguard for primary key changes: 
+// Dexie doesn't support changing the primary key on an existing table.
+// If it happens (UpgradeError), we delete the DB and reload to start fresh.
+db.open().catch("UpgradeError", function (err) {
+    console.warn("[DB] Schema mismatch (Primary Key change). Deleting database to fix...");
+    db.delete().then(() => {
+        console.log("[DB] Database deleted. Reloading page...");
+        window.location.reload();
+    });
+});
+
 /**
  * Persistence: Request storage persistence from the browser
  */
