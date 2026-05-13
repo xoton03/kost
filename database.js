@@ -3,8 +3,8 @@
  * Centralized IndexedDB for all modules (Checkage, Tic-Tache, Flo).
  */
 
-const SUPABASE_URL = "https://jphzmgscxpejcyjlnspq.supabase.co";
-const SUPABASE_KEY = "sb_publishable_gshF6Y08DYJYO9c8Z_Cv2Q_9nEZr7J9";
+window.SUPABASE_URL = window.SUPABASE_URL || "https://jphzmgscxpejcyjlnspq.supabase.co";
+window.SUPABASE_KEY = window.SUPABASE_KEY || "sb_publishable_gshF6Y08DYJYO9c8Z_Cv2Q_9nEZr7J9";
 
 // Initialize Dexie
 const db = new Dexie("KostSharedDB");

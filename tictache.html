@@ -323,9 +323,12 @@
             <div id="logo-trigger" class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-all active:scale-95 select-none" title="Ouvrir le menu">
                 <img src="assets/logo.png" alt="Logo K.O.S.T." class="w-9 h-9 rounded-md object-cover shadow-[0_0_15px_rgba(34,197,94,0.3)] shrink-0 border border-[#22C55E]/30">
                 <div class="flex flex-col leading-tight">
-                    <h1 class="text-white font-extrabold text-sm sm:text-base tracking-tighter uppercase">
-                        K.O.S.T. — <span class="text-yellow-400">Tickets</span>
-                    </h1>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-white font-extrabold text-sm sm:text-base tracking-tighter uppercase">
+                            K.O.S.T. — <span class="text-yellow-400">Tickets</span>
+                        </h1>
+                        <span class="text-[9px] font-black bg-blue-600 text-white px-1.2 py-0.2 rounded-sm shadow-[0_0_8px_rgba(37,99,235,0.4)]">V6.1</span>
+                    </div>
                     <p class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em]">Mobile Print Terminal</p>
                 </div>
             </div>
@@ -460,8 +463,8 @@
     // ============================================================
     // CONFIG SUPABASE (identique à app.js)
     // ============================================================
-    const SUPABASE_URL = "https://jphzmgscxpejcyjlnspq.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_gshF6Y08DYJYO9c8Z_Cv2Q_9nEZr7J9";
+    window.SUPABASE_URL = window.SUPABASE_URL || "https://jphzmgscxpejcyjlnspq.supabase.co";
+    window.SUPABASE_KEY = window.SUPABASE_KEY || "sb_publishable_gshF6Y08DYJYO9c8Z_Cv2Q_9nEZr7J9";
     const GAS_PRINT_URL = "https://script.google.com/macros/s/AKfycbxPIhweJ51FptVFcCqAX28poGYlR10TCjZaVmhOij6rPmK8H8Hl33RWg3k3jTfGJiIb/exec";
 
     async function supabaseFetch(table, select = '*', filters = {}, options = {}) {
