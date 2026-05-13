@@ -46,12 +46,12 @@ async function syncCatalogue(onProgress) {
     console.log("[DB] Starting full synchronization...");
     
     // 1. Get total count
-    // Using count=exact to ensure no data is missed
+    // Using count=estimated for 1.2M+ rows to avoid Supabase timeout (Error 500)
     const countResponse = await fetch(`${SUPABASE_URL}/rest/v1/produits_kiabi?select=count`, {
         headers: {
             'apikey': SUPABASE_KEY,
             'Range-Unit': 'items',
-            'Prefer': 'count=exact'
+            'Prefer': 'count=estimated'
         }
     });
     
