@@ -1,20 +1,23 @@
-const CACHE_NAME = 'kost-v6.5';
+const CACHE_NAME = 'kost-v6.6';
 const urlsToCache = [
   './',
   './index.html',
   './tictache.html',
   './station.html',
   './flo.html',
+  './technical_fiche.html',
   './styles.css',
-  './app.js',
-  './flo.js',
   './database.js',
   './sync.js',
   './navigation.js',
   './updater.js',
+  './dexie.js',
+  './lucide.js',
+  './jsbarcode.js',
+  './supabase.js',
   './assets/favicon.png',
   './assets/logo.png',
-  'https://unpkg.com/dexie/dist/dexie.js'
+  'https://cdn.tailwindcss.com'
 ];
 
 self.addEventListener('install', event => {

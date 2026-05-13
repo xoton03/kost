@@ -119,34 +119,53 @@ async function syncCatalogue(onProgress) {
  * Search: Get unique colors for a reference
  */
 async function getColors(ref) {
-    const results = await db.catalogue_articles
-        .where('ref_article')
-        .equals(ref.toUpperCase())
-        .toArray();
-    return [...new Set(results.map(r => r.couleur))];
+    console.log(`[DB] Recherche couleurs pour ref: ${ref}`);
+    try {
+        const results = await db.catalogue_articles
+            .where('ref_article')
+            .equals(ref.toUpperCase())
+            .toArray();
+        console.log(`[DB] ${results.length} variantes trouvées pour ${ref}`);
+        return [...new Set(results.map(r => r.couleur))];
+    } catch (err) {
+        console.error(`[DB] Erreur getColors(${ref}):`, err);
+        throw err;
+    }
 }
 
 /**
  * Search: Get unique sizes for a ref/color pair
  */
 async function getSizes(ref, color) {
-    const results = await db.catalogue_articles
-        .where('ref_article')
-        .equals(ref.toUpperCase())
-        .and(item => item.couleur === color)
-        .toArray();
-    return [...new Set(results.map(r => r.taille))];
+    console.log(`[DB] Recherche tailles pour ref: ${ref}, couleur: ${color}`);
+    try {
+        const results = await db.catalogue_articles
+            .where('ref_article')
+            .equals(ref.toUpperCase())
+            .and(item => item.couleur === color)
+            .toArray();
+        return [...new Set(results.map(r => r.taille))];
+    } catch (err) {
+        console.error(`[DB] Erreur getSizes(${ref}, ${color}):`, err);
+        throw err;
+    }
 }
 
 /**
  * Search: Get full article details
  */
 async function getArticle(ref, color, size) {
-    return await db.catalogue_articles
-        .where('ref_article')
-        .equals(ref.toUpperCase())
-        .and(item => item.couleur === color && item.taille === size)
-        .first();
+    console.log(`[DB] Recherche article complet: ${ref}, ${color}, ${size}`);
+    try {
+        return await db.catalogue_articles
+            .where('ref_article')
+            .equals(ref.toUpperCase())
+            .and(item => item.couleur === color && item.taille === size)
+            .first();
+    } catch (err) {
+        console.error(`[DB] Erreur getArticle(${ref}, ${color}, ${size}):`, err);
+        throw err;
+    }
 }
 
 /**
