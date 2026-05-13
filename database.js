@@ -65,7 +65,7 @@ async function syncCatalogue(onProgress) {
     while (offset < totalItems) {
         const end = Math.min(offset + chunkSize - 1, totalItems - 1);
         
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/produits_kiabi?select=code_barres,code_article,departement,couleur,taille,collection&order=code_barres.asc`, {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/produits_kiabi?select=code_barres,code_article,couleur,taille,collection,groupe,departement&order=code_barres.asc`, {
             headers: {
                 'apikey': SUPABASE_KEY,
                 'Range': `${offset}-${end}`
@@ -88,8 +88,9 @@ async function syncCatalogue(onProgress) {
             couleur: item.couleur,
             taille: item.taille,
             collection: item.collection,
-            prix_tarif: 0, // Non disponible dans produits_kiabi
-            prix_reduit: 0 // Non disponible dans produits_kiabi
+            groupe: item.groupe,
+            prix_tarif: 0, 
+            prix_reduit: 0
         }));
         
         await db.catalogue_articles.bulkPut(mappedData);
