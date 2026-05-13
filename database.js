@@ -46,12 +46,12 @@ async function syncCatalogue(onProgress) {
     console.log("[DB] Starting full synchronization...");
     
     // 1. Get total count
-    // Optimized with count=planned for massive tables
+    // Using count=exact to ensure no data is missed
     const countResponse = await fetch(`${SUPABASE_URL}/rest/v1/produits_kiabi?select=count`, {
         headers: {
             'apikey': SUPABASE_KEY,
             'Range-Unit': 'items',
-            'Prefer': 'count=planned'
+            'Prefer': 'count=exact'
         }
     });
     
@@ -64,7 +64,7 @@ async function syncCatalogue(onProgress) {
     const contentRange = countResponse.headers.get('Content-Range');
     const totalItems = contentRange ? parseInt(contentRange.split('/')[1]) : 0;
     
-    console.log(`[DB] Total items to sync (estimated): ${totalItems}`);
+    console.log(`[DB] Total items to sync (exact): ${totalItems}`);
     
     // 2. Clear local table before sync
     await db.catalogue_articles.clear();
@@ -72,6 +72,7 @@ async function syncCatalogue(onProgress) {
     // 3. Paginated Fetch (5000 lines blocks)
     const chunkSize = 5000;
     let offset = 0;
+    let totalSaved = 0;
     
     while (offset < totalItems) {
         const end = Math.min(offset + chunkSize - 1, totalItems - 1);
@@ -91,44 +92,52 @@ async function syncCatalogue(onProgress) {
         
         const data = await response.json();
         
-        // Map Supabase columns to local schema
+        // Map Supabase columns to local schema + TRIM strings
         const mappedData = data.map(item => ({
-            gencod: String(item.code_barres),
-            ref_article: item.code_article,
-            libelle: item.departement || 'ARTICLE',
-            couleur: item.couleur,
-            taille: item.taille,
-            collection: item.collection,
-            groupe: item.groupe,
+            gencod: String(item.code_barres || "").trim(),
+            ref_article: String(item.code_article || "").trim().toUpperCase(),
+            libelle: String(item.departement || 'ARTICLE').trim(),
+            couleur: String(item.couleur || "").trim().toUpperCase(),
+            taille: String(item.taille || "").trim().toUpperCase(),
+            collection: String(item.collection || "").trim(),
+            groupe: String(item.groupe || "").trim(),
             prix_tarif: 0, 
             prix_reduit: 0
         }));
         
         await db.catalogue_articles.bulkPut(mappedData);
         
+        totalSaved += mappedData.length;
         offset += chunkSize;
+        
         if (onProgress) onProgress(Math.min(offset, totalItems), totalItems);
+        
+        // Log progress every 50k items
+        if (totalSaved % 50000 === 0 || totalSaved >= totalItems) {
+            console.log(`[DB] Progress: ${totalSaved} / ${totalItems} items saved.`);
+        }
     }
     
-    console.log("[DB] Synchronization complete.");
+    console.log(`[DB] Synchronization complete. Total items saved: ${totalSaved}`);
     localStorage.setItem('kost_last_sync', new Date().toISOString());
-    localStorage.setItem('kost_articles_count', totalItems);
+    localStorage.setItem('kost_articles_count', totalSaved);
 }
 
 /**
  * Search: Get unique colors for a reference
  */
 async function getColors(ref) {
-    console.log(`[DB] Recherche couleurs pour ref: ${ref}`);
+    const cleanRef = String(ref || "").trim().toUpperCase();
+    console.log(`[DB] Recherche couleurs pour ref: ${cleanRef}`);
     try {
         const results = await db.catalogue_articles
             .where('ref_article')
-            .equals(ref.toUpperCase())
+            .startsWithIgnoreCase(cleanRef)
             .toArray();
-        console.log(`[DB] ${results.length} variantes trouvées pour ${ref}`);
-        return [...new Set(results.map(r => r.couleur))];
+        console.log(`[DB] ${results.length} variantes trouvées pour ${cleanRef}`);
+        return [...new Set(results.map(r => r.couleur))].sort();
     } catch (err) {
-        console.error(`[DB] Erreur getColors(${ref}):`, err);
+        console.error(`[DB] Erreur getColors(${cleanRef}):`, err);
         throw err;
     }
 }
@@ -137,16 +146,18 @@ async function getColors(ref) {
  * Search: Get unique sizes for a ref/color pair
  */
 async function getSizes(ref, color) {
-    console.log(`[DB] Recherche tailles pour ref: ${ref}, couleur: ${color}`);
+    const cleanRef = String(ref || "").trim().toUpperCase();
+    const cleanColor = String(color || "").trim().toUpperCase();
+    console.log(`[DB] Recherche tailles pour ref: ${cleanRef}, couleur: ${cleanColor}`);
     try {
         const results = await db.catalogue_articles
             .where('ref_article')
-            .equals(ref.toUpperCase())
-            .and(item => item.couleur === color)
+            .startsWithIgnoreCase(cleanRef)
+            .and(item => item.couleur === cleanColor)
             .toArray();
-        return [...new Set(results.map(r => r.taille))];
+        return [...new Set(results.map(r => r.taille))].sort();
     } catch (err) {
-        console.error(`[DB] Erreur getSizes(${ref}, ${color}):`, err);
+        console.error(`[DB] Erreur getSizes(${cleanRef}, ${cleanColor}):`, err);
         throw err;
     }
 }
@@ -155,15 +166,18 @@ async function getSizes(ref, color) {
  * Search: Get full article details
  */
 async function getArticle(ref, color, size) {
-    console.log(`[DB] Recherche article complet: ${ref}, ${color}, ${size}`);
+    const cleanRef = String(ref || "").trim().toUpperCase();
+    const cleanColor = String(color || "").trim().toUpperCase();
+    const cleanSize = String(size || "").trim().toUpperCase();
+    console.log(`[DB] Recherche article complet: ${cleanRef}, ${cleanColor}, ${cleanSize}`);
     try {
         return await db.catalogue_articles
             .where('ref_article')
-            .equals(ref.toUpperCase())
-            .and(item => item.couleur === color && item.taille === size)
+            .startsWithIgnoreCase(cleanRef)
+            .and(item => item.couleur === cleanColor && item.taille === cleanSize)
             .first();
     } catch (err) {
-        console.error(`[DB] Erreur getArticle(${ref}, ${color}, ${size}):`, err);
+        console.error(`[DB] Erreur getArticle(${cleanRef}, ${cleanColor}, ${cleanSize}):`, err);
         throw err;
     }
 }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kost-v6.6';
+const CACHE_NAME = 'kost-v6.7';
 const urlsToCache = [
   './',
   './index.html',
@@ -16,8 +16,7 @@ const urlsToCache = [
   './jsbarcode.js',
   './supabase.js',
   './assets/favicon.png',
-  './assets/logo.png',
-  'https://cdn.tailwindcss.com'
+  './assets/logo.png'
 ];
 
 self.addEventListener('install', event => {
