@@ -31,7 +31,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (syncProgressContainer) syncProgressContainer.classList.remove('hidden');
-        if (syncStatus) syncStatus.textContent = "Sychronisation...";
+        if (syncStatus) {
+            syncStatus.textContent = "Sychronisation...";
+            syncStatus.classList.remove('text-red-500');
+        }
 
         try {
             await syncCatalogue((current, total) => {
@@ -50,8 +53,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (err) {
             console.error("[Sync UI] Failed:", err);
-            showNotification("Échec de la synchronisation", "error");
-            if (syncStatus) syncStatus.textContent = "Échec Sync";
+            showNotification(err.message || "Échec de la synchronisation", "error");
+            if (syncStatus) {
+                syncStatus.textContent = err.message || "Échec Sync";
+                syncStatus.classList.add('text-red-500');
+            }
         } finally {
             // Re-enable buttons
             [btnSyncMain, btnSyncDrawer].forEach(btn => {

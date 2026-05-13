@@ -10,9 +10,9 @@ window.SUPABASE_KEY = window.SUPABASE_KEY || "sb_publishable_gshF6Y08DYJYO9c8Z_C
 const db = new Dexie("KostSharedDB");
 
 // Schema Definition
-// Indexing gencod and ref_article is critical for performance
-db.version(2).stores({
-    catalogue_articles: "++gencod, ref_article, libelle, couleur, taille"
+// gencod is the primary key (barcode)
+db.version(3).stores({
+    catalogue_articles: "gencod, ref_article, libelle, couleur, taille"
 });
 
 /**
@@ -35,19 +35,25 @@ async function syncCatalogue(onProgress) {
     console.log("[DB] Starting full synchronization...");
     
     // 1. Get total count
-    // Note: Using 'produits_kiabi' as the source for now
+    // Optimized with count=planned for massive tables
     const countResponse = await fetch(`${SUPABASE_URL}/rest/v1/produits_kiabi?select=count`, {
         headers: {
             'apikey': SUPABASE_KEY,
             'Range-Unit': 'items',
-            'Prefer': 'count=exact'
+            'Prefer': 'count=planned'
         }
     });
+    
+    if (!countResponse.ok) {
+        const errText = await countResponse.text();
+        console.error(`[DB] Supabase Count Error (${countResponse.status}):`, errText);
+        throw new Error(`Erreur Serveur Supabase (${countResponse.status})`);
+    }
     
     const contentRange = countResponse.headers.get('Content-Range');
     const totalItems = contentRange ? parseInt(contentRange.split('/')[1]) : 0;
     
-    console.log(`[DB] Total items to sync: ${totalItems}`);
+    console.log(`[DB] Total items to sync (estimated): ${totalItems}`);
     
     // 2. Clear local table before sync
     await db.catalogue_articles.clear();
@@ -59,37 +65,37 @@ async function syncCatalogue(onProgress) {
     while (offset < totalItems) {
         const end = Math.min(offset + chunkSize - 1, totalItems - 1);
         
-        try {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/produits_kiabi?select=code_barres,code_article,departement,couleur,taille,collection,prix_tarif,prix_reduit&order=code_barres.asc`, {
-                headers: {
-                    'apikey': SUPABASE_KEY,
-                    'Range': `${offset}-${end}`
-                }
-            });
-            
-            const data = await response.json();
-            
-            // Map Supabase columns to local schema
-            const mappedData = data.map(item => ({
-                gencod: item.code_barres,
-                ref_article: item.code_article,
-                libelle: item.departement || 'ARTICLE',
-                couleur: item.couleur,
-                taille: item.taille,
-                collection: item.collection,
-                prix_tarif: item.prix_tarif,
-                prix_reduit: item.prix_reduit
-            }));
-            
-            await db.catalogue_articles.bulkAdd(mappedData);
-            
-            offset += chunkSize;
-            if (onProgress) onProgress(Math.min(offset, totalItems), totalItems);
-            
-        } catch (err) {
-            console.error(`[DB] Sync error at offset ${offset}:`, err);
-            throw err;
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/produits_kiabi?select=code_barres,code_article,departement,couleur,taille,collection&order=code_barres.asc`, {
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Range': `${offset}-${end}`
+            }
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            console.error(`[DB] Supabase Sync Error at offset ${offset} (${response.status}):`, errText);
+            throw new Error(`Erreur Serveur Supabase (${response.status})`);
         }
+        
+        const data = await response.json();
+        
+        // Map Supabase columns to local schema
+        const mappedData = data.map(item => ({
+            gencod: String(item.code_barres),
+            ref_article: item.code_article,
+            libelle: item.departement || 'ARTICLE',
+            couleur: item.couleur,
+            taille: item.taille,
+            collection: item.collection,
+            prix_tarif: 0, // Non disponible dans produits_kiabi
+            prix_reduit: 0 // Non disponible dans produits_kiabi
+        }));
+        
+        await db.catalogue_articles.bulkPut(mappedData);
+        
+        offset += chunkSize;
+        if (onProgress) onProgress(Math.min(offset, totalItems), totalItems);
     }
     
     console.log("[DB] Synchronization complete.");
