@@ -9,10 +9,9 @@ window.SUPABASE_KEY = window.SUPABASE_KEY || "sb_publishable_gshF6Y08DYJYO9c8Z_C
 // Initialize Dexie
 const db = new Dexie("KostSharedDB");
 
-// Schema Definition
-// gencod is the primary key (barcode)
-db.version(3).stores({
-    catalogue_articles: "gencod, ref_article, libelle, couleur, taille"
+// Schema Definition (V8)
+db.version(4).stores({
+    catalogue_articles: "gencod, ref_article, libelle, couleur, taille, groupe, departement"
 });
 
 // Safeguard for primary key changes: 
@@ -99,10 +98,9 @@ async function syncCatalogue(onProgress) {
             libelle: String(item.departement || 'ARTICLE').trim(),
             couleur: String(item.couleur || "").trim().toUpperCase(),
             taille: String(item.taille || "").trim().toUpperCase(),
-            collection: String(item.collection || "").trim(),
-            groupe: String(item.groupe || "").trim(),
-            prix_tarif: 0, 
-            prix_reduit: 0
+            groupe: String(item.groupe || "").trim().toUpperCase(),
+            departement: String(item.departement || "").trim().toUpperCase(),
+            collection: String(item.collection || "").trim().toUpperCase()
         }));
         
         await db.catalogue_articles.bulkPut(mappedData);

@@ -14,14 +14,15 @@
     --font-headline: 'Space Grotesk', sans-serif;
     --font-body: 'Inter', sans-serif;
 
-    /* Day of week colors */
-    --day-0: #5856D6; /* Sunday: Purple */
-    --day-1: #FF3B30; /* Monday: Red */
-    --day-2: #FF9500; /* Tuesday: Orange */
-    --day-3: #FFCC00; /* Wednesday: Yellow */
-    --day-4: #4CD964; /* Thursday: Green */
-    --day-5: #5AC8FA; /* Friday: Cyan */
-    --day-6: #007AFF; /* Saturday: Blue */
+    /* Industrial Terminal Theme (Obsidian Pulse) */
+    --industrial-orange: #FF6D00;
+    --industrial-orange-glow: rgba(255, 109, 0, 0.4);
+    --industrial-bg: #0A0A0A;
+    --industrial-surface: #141414;
+    --industrial-border: #333333;
+    --industrial-text: #FFFFFF;
+    --industrial-text-muted: #A0A0A0;
+    --industrial-mono: 'JetBrains Mono', 'Courier New', monospace;
 }
 
 * {
@@ -628,4 +629,131 @@ tr:hover {
     .update-subtitle {
         display: none;
     }
+}
+/* --- Industrial Terminal UI Components --- */
+
+.terminal-badge {
+    background: rgba(255, 109, 0, 0.1);
+    color: var(--industrial-orange);
+    border: 1px solid var(--industrial-orange);
+    padding: 4px 12px;
+    font-family: var(--industrial-mono);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    box-shadow: 0 0 10px var(--industrial-orange-glow);
+}
+
+.terminal-input-group {
+    background: var(--industrial-surface);
+    border: 1px solid var(--industrial-border);
+    padding: 2px;
+    display: flex;
+    align-items: center;
+}
+
+.terminal-label {
+    background: var(--industrial-border);
+    color: var(--industrial-text-muted);
+    padding: 8px 12px;
+    font-family: var(--font-headline);
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.terminal-input {
+    background: transparent !important;
+    border: none !important;
+    color: var(--industrial-orange) !important;
+    font-family: var(--industrial-mono) !important;
+    font-size: 13px !important;
+    padding: 8px 12px !important;
+    width: 100%;
+}
+
+.terminal-input:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.terminal-select {
+    background: transparent;
+    border: none;
+    color: var(--industrial-text);
+    font-family: var(--font-headline);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 8px 12px;
+    cursor: pointer;
+    text-transform: uppercase;
+    width: 100%;
+}
+
+.terminal-select option {
+    background: var(--industrial-surface);
+    color: var(--industrial-text);
+}
+
+.terminal-btn {
+    background: var(--industrial-border);
+    color: var(--industrial-text);
+    border: none;
+    padding: 8px 20px;
+    font-family: var(--font-headline);
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.terminal-btn:hover:not(:disabled) {
+    background: var(--industrial-orange);
+    color: #000;
+}
+
+.terminal-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.terminal-table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.terminal-table th {
+    background: #111;
+    color: var(--industrial-text-muted);
+    font-family: var(--font-headline);
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 12px 16px;
+    border: 1px solid var(--industrial-border);
+    text-align: left;
+}
+
+.terminal-table td {
+    padding: 8px 16px;
+    border: 1px solid var(--industrial-border);
+    font-size: 12px;
+    color: #ddd;
+}
+
+.terminal-table tr:hover td {
+    background: rgba(255, 109, 0, 0.05);
+    color: #fff;
+}
+
+.mono-data {
+    font-family: var(--industrial-mono);
+    color: var(--industrial-orange);
+    letter-spacing: -0.02em;
 }

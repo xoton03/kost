@@ -3,243 +3,494 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>K.O.S.T. - Explorateur de Base de Données</title>
+    <title>K.O.S.T. - DB EXPLORER V6.8.0</title>
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Grotesk:wght@500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="lucide.js" defer></script>
     <script src="dexie.js" defer></script>
     <script src="database.js" defer></script>
     <script src="navigation.js" defer></script>
     <link rel="stylesheet" href="styles.css">
     <style>
-        .db-table-container {
-            background: #0f172a;
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px;
-            overflow: hidden;
+        :root {
+            --bg-deep: #0a0604;
+            --bg-surface: #1d100a;
+            --accent-glow: rgba(255, 109, 0, 0.15);
         }
-        table {
+
+        body { 
+            background: var(--bg-deep); 
+            color: #fff; 
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .explorer-container {
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            height: 100vh;
+            background: radial-gradient(circle at 50% 0%, var(--accent-glow) 0%, transparent 70%);
+        }
+
+        /* PREMIUM HEADER */
+        .explorer-header {
+            background: rgba(10, 6, 4, 0.8);
+            backdrop-blur: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            z-index: 100;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header-title h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .v-badge {
+            font-size: 0.6rem;
+            background: var(--industrial-orange);
+            color: #000;
+            padding: 1px 4px;
+            border-radius: 2px;
+            font-weight: 900;
+        }
+
+        /* FILTER GRID */
+        .filter-panel {
+            background: var(--bg-surface);
+            border-bottom: 1px solid rgba(255, 109, 0, 0.2);
+            padding: 1rem 1.5rem;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr auto;
+            gap: 1.5rem;
+            align-items: end;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+
+        @media (max-width: 1024px) {
+            .filter-panel {
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+            }
+            .filter-panel > :first-child { grid-column: span 2; }
+        }
+
+        @media (max-width: 600px) {
+            .filter-panel { grid-template-columns: 1fr; }
+            .filter-panel > :first-child { grid-column: span 1; }
+        }
+
+        /* TABLE STYLING */
+        .table-area {
+            position: relative;
+            overflow: auto;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .terminal-table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             font-size: 0.85rem;
         }
-        th {
-            background: rgba(255,255,255,0.05);
-            text-align: left;
-            padding: 12px;
-            color: #94a3b8;
+
+        .terminal-table th {
+            position: sticky;
+            top: 0;
+            background: var(--bg-surface);
+            color: #888;
+            font-family: 'Space Grotesk', sans-serif;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.65rem;
+            letter-spacing: 1px;
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 2px solid var(--industrial-orange);
+            z-index: 10;
         }
-        td {
-            padding: 10px 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            color: #cbd5e1;
+
+        .terminal-table td {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            vertical-align: middle;
         }
-        tr:hover {
-            background: rgba(255,255,255,0.02);
+
+        .terminal-table tr:hover {
+            background: rgba(255, 109, 0, 0.05);
         }
-        .pagination-btn {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: #fff;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: 0.75rem;
+
+        .mono-data {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--industrial-orange);
+            font-weight: 500;
+        }
+
+        .ref-cell {
+            font-family: 'Space Grotesk', sans-serif;
             font-weight: 700;
+            color: #fff;
+        }
+
+        .tag-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.05);
+            color: #666;
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        /* LOADING OVERLAY */
+        #loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 6, 4, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            backdrop-blur: 4px;
+            display: none;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 109, 0, 0.1);
+            border-top-color: var(--industrial-orange);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* PAGINATION */
+        .pagination-bar {
+            background: var(--bg-surface);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .page-info {
+            color: #666;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .page-info b { color: #fff; }
+
+        .btn-group {
+            display: flex;
+            gap: 2px;
+            background: rgba(255,255,255,0.05);
+            padding: 2px;
+            border-radius: 4px;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: #fff;
+            padding: 0.5rem 1.5rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 800;
+            font-size: 0.7rem;
+            cursor: pointer;
             transition: all 0.2s;
         }
-        .pagination-btn:hover:not(:disabled) {
-            background: #22c55e;
-            border-color: #22c55e;
+
+        .nav-btn:hover:not(:disabled) {
+            background: var(--industrial-orange);
+            color: #000;
         }
-        .pagination-btn:disabled {
-            opacity: 0.3;
+
+        .nav-btn:disabled {
+            opacity: 0.2;
             cursor: not-allowed;
         }
     </style>
 </head>
-<body class="bg-black text-slate-300 min-h-screen flex flex-col">
+<body>
 
-    <header class="flex items-center justify-between px-4 sm:px-6 bg-slate-900 border-b border-white/5 h-[60px]">
-        <div class="flex items-center gap-3">
-            <button id="hamburger-trigger" class="p-2 text-slate-400 hover:text-[#22C55E]">
-                <i data-lucide="menu" class="w-6 h-6"></i>
+    <div class="explorer-container animate-entrance">
+        <!-- HEADER -->
+        <header class="explorer-header">
+            <button id="hamburger-trigger" class="btn-search" style="padding: 0.5rem; background: transparent;">
+                <i data-lucide="menu" style="width: 20px; height: 20px;"></i>
             </button>
-            <div class="flex items-center gap-3">
-                <img src="assets/logo.png" alt="Logo" class="w-8 h-8 rounded border border-[#22C55E]/30">
-                <h1 class="text-white font-black text-lg tracking-tighter uppercase">DB EXPLORER</h1>
+            <div class="header-title">
+                <img src="assets/logo.png" alt="Logo" style="width: 28px; height: 28px;">
+                <h1>DATABASE_EXPLORER <span class="v-badge">V8</span></h1>
             </div>
-        </div>
-        <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest hidden sm:block">
-            Vue temporaire de débogage
-        </div>
-    </header>
+            <div style="margin-left: auto;" class="terminal-badge" id="sync-status">
+                INDEXED_LOCAL_PERSISTENCE
+            </div>
+        </header>
 
-    <main class="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full space-y-6">
-        
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-                <h2 class="text-2xl font-black text-white uppercase tracking-tight">Catalogue Articles (Local)</h2>
-                <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">
-                    Total articles en cache : <span id="total-count" class="text-orange-500">...</span>
-                </p>
+        <!-- FILTERS -->
+        <div class="filter-panel">
+            <div class="terminal-input-group">
+                <div class="terminal-label">SEARCH_QUERY:</div>
+                <input type="text" id="search-input" class="terminal-input" placeholder="RÉFÉRENCE, GENCOD, LIBELLÉ..." autocomplete="off">
             </div>
-            <div class="flex gap-2">
-                <button id="btn-refresh-view" class="bg-blue-600/20 text-blue-400 border border-blue-600/30 px-4 py-2 text-[10px] font-black uppercase rounded hover:bg-blue-600/30 transition-all flex items-center gap-2">
-                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-                    Actualiser la vue
-                </button>
-            </div>
-        </div>
 
-        <!-- Table Container -->
-        <div class="db-table-container">
-            <div class="overflow-x-auto">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>GENCOD</th>
-                            <th>RÉFÉRENCE</th>
-                            <th>COULEUR</th>
-                            <th>TAILLE</th>
-                            <th>LIBELLÉ / DEPT</th>
-                        </tr>
-                    </thead>
-                    <tbody id="db-tbody">
-                        <tr>
-                            <td colspan="5" class="text-center py-20 text-slate-500 italic">Chargement des données...</td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="terminal-input-group">
+                <div class="terminal-label">FILTER_DEPT:</div>
+                <select id="dept-filter" class="terminal-select">
+                    <option value="ALL">-- TOUS --</option>
+                </select>
             </div>
-            
-            <!-- Pagination -->
-            <div class="p-4 border-t border-white/5 flex items-center justify-between bg-black/20">
-                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                    Page <span id="current-page">1</span> sur <span id="total-pages">...</span>
-                </div>
-                <div class="flex gap-2">
-                    <button id="prev-page" class="pagination-btn" disabled>Précédent</button>
-                    <button id="next-page" class="pagination-btn" disabled>Suivant</button>
-                </div>
+
+            <div class="terminal-input-group">
+                <div class="terminal-label">FILTER_GROUP:</div>
+                <select id="group-filter" class="terminal-select">
+                    <option value="ALL">-- TOUS --</option>
+                </select>
             </div>
+
+            <button id="btn-refresh" class="terminal-btn" style="height: 44px; padding: 0 1.5rem;">
+                <i data-lucide="rotate-ccw" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                RESET
+            </button>
         </div>
 
-    </main>
+        <!-- TABLE -->
+        <div class="table-area">
+            <div id="loading-overlay">
+                <div class="spinner"></div>
+                <div style="margin-top: 1rem; font-family: 'Space Grotesk', sans-serif; font-size: 0.7rem; color: var(--industrial-orange); letter-spacing: 2px;">FETCHING_DATA...</div>
+            </div>
 
-    <!-- Navigation Drawer -->
+            <table class="terminal-table">
+                <thead>
+                    <tr>
+                        <th style="width: 160px;">GENCOD</th>
+                        <th style="width: 200px;">CODE_ARTICLE</th>
+                        <th style="width: 140px;">VARIANT</th>
+                        <th style="width: 100px;">SIZE</th>
+                        <th>METADATA / CATEGORIZATION</th>
+                    </tr>
+                </thead>
+                <tbody id="db-tbody">
+                    <!-- Dynamic Content -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- FOOTER -->
+        <footer class="pagination-bar">
+            <div class="page-info">
+                MATCHES: <b id="match-count">0</b> / <b id="db-total">0</b>
+                <span style="margin: 0 1.5rem; opacity: 0.3;">|</span>
+                PAGE: <b id="current-page">1</b> OF <b id="total-pages">1</b>
+            </div>
+            <div class="btn-group">
+                <button id="prev-page" class="nav-btn" disabled>PREV_BLOCK</button>
+                <button id="next-page" class="nav-btn" disabled>NEXT_BLOCK</button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Navigation Backdrop -->
     <div id="nav-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] hidden opacity-0 transition-opacity duration-300"></div>
-    <aside id="nav-drawer" class="fixed top-0 left-0 h-full w-72 bg-[#0f172a] border-r border-white/10 z-[200] -translate-x-full transition-transform duration-300 ease-out shadow-2xl">
-        <div class="p-6 border-b border-white/5 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <img src="assets/logo.png" alt="Logo" class="w-8 h-8 rounded">
-                <span class="text-white font-black tracking-tighter uppercase">Menu Principal</span>
-            </div>
-            <button id="btn-close-drawer" class="text-slate-500 hover:text-white transition-colors">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-        </div>
-        <nav class="p-4 space-y-2">
-            <a href="index.html" class="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/5 text-slate-400 transition-all">
-                <i data-lucide="scan-barcode" class="w-4 h-4"></i>
-                <span class="text-sm font-bold">Checkage</span>
-            </a>
-            <a href="tictache.html" class="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/5 text-slate-400 transition-all">
-                <i data-lucide="tag" class="w-4 h-4"></i>
-                <span class="text-sm font-bold">Ticketage</span>
-            </a>
-            <a href="station.html" class="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/5 text-slate-400 transition-all">
-                <i data-lucide="monitor" class="w-4 h-4"></i>
-                <span class="text-sm font-bold">Station</span>
-            </a>
-            <a href="flo.html" class="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/5 text-slate-400 transition-all">
-                <i data-lucide="trending-up" class="w-4 h-4"></i>
-                <span class="text-sm font-bold">Flo</span>
-            </a>
-            <a href="explorer.html" class="flex items-center gap-4 px-4 py-3 rounded-lg bg-[#22C55E]/10 border border-[#22C55E]/20 text-white transition-all">
-                <i data-lucide="database" class="w-4 h-4 text-[#22C55E]"></i>
-                <span class="text-sm font-bold">DB Explorer</span>
-            </a>
-        </nav>
-    </aside>
 
     <script>
         const PAGE_SIZE = 50;
         let currentPage = 1;
+        let isInitialLoad = true;
 
-        async function loadTable() {
-            const tbody = document.getElementById('db-tbody');
-            const totalCountEl = document.getElementById('total-count');
-            const currentPageEl = document.getElementById('current-page');
-            const totalPagesEl = document.getElementById('total-pages');
-            const prevBtn = document.getElementById('prev-page');
-            const nextBtn = document.getElementById('next-page');
-
+        /**
+         * Optimized Unique Value Extraction using Dexie Indices
+         */
+        async function populateFilters() {
             try {
-                const count = await db.catalogue_articles.count();
-                totalCountEl.textContent = count.toLocaleString();
-                
-                const totalPages = Math.ceil(count / PAGE_SIZE) || 1;
-                totalPagesEl.textContent = totalPages;
-                currentPageEl.textContent = currentPage;
+                // Since we added indices, uniqueKeys() is very fast
+                const depts = await db.catalogue_articles.orderBy('departement').uniqueKeys();
+                const groups = await db.catalogue_articles.orderBy('groupe').uniqueKeys();
 
-                // Buttons state
-                prevBtn.disabled = currentPage === 1;
-                nextBtn.disabled = currentPage >= totalPages;
+                const deptSelect = document.getElementById('dept-filter');
+                const groupSelect = document.getElementById('group-filter');
 
-                // Fetch data
-                const items = await db.catalogue_articles
-                    .offset((currentPage - 1) * PAGE_SIZE)
-                    .limit(PAGE_SIZE)
-                    .toArray();
+                // Clear existing (except ALL)
+                deptSelect.innerHTML = '<option value="ALL">-- TOUS --</option>';
+                groupSelect.innerHTML = '<option value="ALL">-- TOUS --</option>';
 
-                if (items.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-20 text-slate-500 italic">Aucune donnée trouvée. Lancez une synchronisation.</td></tr>';
-                    return;
-                }
+                depts.filter(d => d && d !== "").forEach(d => {
+                    const opt = new Option(d, d);
+                    deptSelect.add(opt);
+                });
 
-                tbody.innerHTML = items.map(item => `
-                    <tr>
-                        <td class="font-mono text-[10px] text-[#22C55E]">${item.gencod}</td>
-                        <td class="font-bold text-white">${item.ref_article}</td>
-                        <td class="text-xs">${item.couleur || "-"}</td>
-                        <td class="text-xs">${item.taille || "-"}</td>
-                        <td class="text-[10px] text-slate-500 uppercase font-bold">${item.libelle}</td>
-                    </tr>
-                `).join('');
+                groups.filter(g => g && g !== "").forEach(g => {
+                    const opt = new Option(g, g);
+                    groupSelect.add(opt);
+                });
 
+                console.log(`[Explorer] Filters populated: ${depts.length} depts, ${groups.length} groups`);
             } catch (err) {
-                console.error("Failed to load table:", err);
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-20 text-red-400">Erreur : ${err.message}</td></tr>`;
+                console.warn("[Explorer] Filter population fallback...", err);
+                // Fallback for non-indexed or errors
+                const sample = await db.catalogue_articles.limit(20000).toArray();
+                const depts = [...new Set(sample.map(i => i.departement))].sort();
+                const groups = [...new Set(sample.map(i => i.groupe))].sort();
+                // ... same population logic
             }
         }
 
-        // Event Listeners
+        async function updateView() {
+            const tbody = document.getElementById('db-tbody');
+            const overlay = document.getElementById('loading-overlay');
+            const searchQuery = document.getElementById('search-input').value.trim().toUpperCase();
+            const deptVal = document.getElementById('dept-filter').value;
+            const groupVal = document.getElementById('group-filter').value;
+
+            overlay.style.display = 'flex';
+
+            try {
+                let query = db.catalogue_articles;
+
+                // 1. Primary Filter (Index based if possible)
+                if (searchQuery) {
+                    if (/^\d{8,13}$/.test(searchQuery)) {
+                        // Gencod search
+                        const item = await db.catalogue_articles.get(searchQuery);
+                        query = item ? [item] : [];
+                    } else {
+                        // Ref search
+                        query = db.catalogue_articles.where('ref_article').startsWithIgnoreCase(searchQuery);
+                    }
+                } else if (deptVal !== "ALL") {
+                    query = db.catalogue_articles.where('departement').equals(deptVal);
+                } else if (groupVal !== "ALL") {
+                    query = db.catalogue_articles.where('groupe').equals(groupVal);
+                }
+
+                // 2. Secondary Filtering (In-memory or Collection.filter)
+                let results;
+                if (Array.isArray(query)) {
+                    results = query;
+                } else {
+                    // Refine with and() for non-index filters
+                    if (searchQuery && deptVal !== "ALL") {
+                        query = query.filter(i => i.departement === deptVal);
+                    }
+                    if (groupVal !== "ALL" && (searchQuery || deptVal !== "ALL")) {
+                        query = query.filter(i => i.groupe === groupVal);
+                    } else if (groupVal !== "ALL" && !searchQuery && deptVal === "ALL") {
+                        // Already handled by initial where() if it was the first filter
+                    }
+                    
+                    // We need count for pagination
+                    const count = await query.count();
+                    document.getElementById('match-count').textContent = count.toLocaleString();
+                    
+                    const totalPages = Math.ceil(count / PAGE_SIZE) || 1;
+                    document.getElementById('total-pages').textContent = totalPages;
+                    document.getElementById('current-page').textContent = currentPage;
+                    
+                    document.getElementById('prev-page').disabled = currentPage <= 1;
+                    document.getElementById('next-page').disabled = currentPage >= totalPages;
+
+                    results = await query
+                        .offset((currentPage - 1) * PAGE_SIZE)
+                        .limit(PAGE_SIZE)
+                        .toArray();
+                }
+
+                // 3. Render
+                if (results.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 5rem; color: #333; font-family: \'Space Grotesk\'; font-weight: 800;">NO_DATA_MATCHED_FILTER_PARAMS</td></tr>';
+                } else {
+                    tbody.innerHTML = results.map(item => `
+                        <tr>
+                            <td class="mono-data">${item.gencod}</td>
+                            <td class="ref-cell">${item.ref_article}</td>
+                            <td>
+                                <span style="color: #eee;">${item.couleur || "-"}</span>
+                            </td>
+                            <td style="font-weight: 700;">${item.taille || "-"}</td>
+                            <td>
+                                <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                    <span class="tag-pill" style="color: var(--industrial-orange); background: rgba(255,109,0,0.1);">${item.departement}</span>
+                                    <span class="tag-pill">${item.groupe}</span>
+                                    ${item.collection ? `<span class="tag-pill" style="opacity: 0.5;">${item.collection}</span>` : ""}
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+
+                if (isInitialLoad) {
+                    const total = await db.catalogue_articles.count();
+                    document.getElementById('db-total').textContent = total.toLocaleString();
+                    populateFilters();
+                    isInitialLoad = false;
+                }
+
+            } catch (err) {
+                console.error("[Explorer] Error:", err);
+                tbody.innerHTML = `<tr><td colspan="5" style="color: var(--industrial-orange); text-align: center; padding: 2rem;">CRITICAL_ERROR: ${err.message}</td></tr>`;
+            } finally {
+                overlay.style.display = 'none';
+            }
+        }
+
+        // INIT
         document.addEventListener('DOMContentLoaded', () => {
-            // Wait for database.js to initialize 'db'
-            setTimeout(loadTable, 500);
+            // Wait for DB to be ready
+            setTimeout(updateView, 800);
+
+            let t;
+            const triggerUpdate = () => {
+                clearTimeout(t);
+                t = setTimeout(() => {
+                    currentPage = 1;
+                    updateView();
+                }, 400);
+            };
+
+            document.getElementById('search-input').addEventListener('input', triggerUpdate);
+            document.getElementById('dept-filter').addEventListener('change', triggerUpdate);
+            document.getElementById('group-filter').addEventListener('change', triggerUpdate);
+            
+            document.getElementById('btn-refresh').addEventListener('click', () => {
+                document.getElementById('search-input').value = "";
+                document.getElementById('dept-filter').value = "ALL";
+                document.getElementById('group-filter').value = "ALL";
+                currentPage = 1;
+                updateView();
+            });
 
             document.getElementById('prev-page').addEventListener('click', () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    loadTable();
-                }
+                if (currentPage > 1) { { currentPage--; updateView(); } }
             });
-
             document.getElementById('next-page').addEventListener('click', () => {
-                currentPage++;
-                loadTable();
-            });
-
-            document.getElementById('btn-refresh-view').addEventListener('click', () => {
-                currentPage = 1;
-                loadTable();
+                currentPage++; updateView();
             });
         });
     </script>
