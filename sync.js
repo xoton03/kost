@@ -1,15 +1,16 @@
 /**
- * K.O.S.T. - Shared Synchronization UI
+ * K.O.S.T. - Shared Synchronization UI (V7 Force Sync)
  * Manages the progress bar and status updates across all modules.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    const btnSyncMain = document.getElementById('btn-sync-database');
-    const btnSyncDrawer = document.getElementById('btn-sync-database-drawer');
+    const btnSyncFull = document.getElementById('btn-sync-database');
+    const btnSyncResume = document.getElementById('btn-resume-database');
     const syncProgressContainer = document.getElementById('sync-progress-container');
     const syncBar = document.getElementById('sync-bar');
     const syncCount = document.getElementById('sync-count');
     const syncStatus = document.getElementById('sync-status');
+    const syncEta = document.getElementById('sync-eta');
     const dbStatusText = document.getElementById('local-db-status');
 
     // Helper to show toast if available
@@ -21,9 +22,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    const triggerSync = async () => {
+    /**
+     * Formatting helper for ETA
+     */
+    function formatTime(seconds) {
+        if (seconds < 60) return `${seconds}s`;
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}m ${secs}s`;
+    }
+
+    const triggerSync = async (isResume = false) => {
         // Disable buttons
-        [btnSyncMain, btnSyncDrawer].forEach(btn => {
+        [btnSyncFull, btnSyncResume].forEach(btn => {
             if (btn) {
                 btn.disabled = true;
                 btn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -32,16 +43,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (syncProgressContainer) syncProgressContainer.classList.remove('hidden');
         if (syncStatus) {
-            syncStatus.textContent = "Synchronisation...";
+            syncStatus.textContent = isResume ? "Reprise..." : "Synchronisation...";
             syncStatus.classList.remove('text-red-500');
         }
 
         try {
-            await syncCatalogue((current, total) => {
+            await syncCatalogue((current, total, eta) => {
                 const percent = (current / total) * 100;
                 if (syncBar) syncBar.style.width = `${percent}%`;
                 if (syncCount) syncCount.textContent = `${current.toLocaleString()} / ${total.toLocaleString()}`;
-            });
+                if (syncEta) {
+                    syncEta.textContent = eta > 0 ? `Restant : ~${formatTime(eta)}` : 'Calcul...';
+                    syncEta.classList.remove('hidden');
+                }
+            }, isResume);
 
             showNotification("Base de données à jour !", "success");
             updateDbStatusUI();
@@ -49,18 +64,18 @@ document.addEventListener('DOMContentLoaded', () => {
             // Hide progress after success
             setTimeout(() => {
                 if (syncProgressContainer) syncProgressContainer.classList.add('hidden');
-            }, 3000);
+            }, 5000);
 
         } catch (err) {
             console.error("[Sync UI] Failed:", err);
             showNotification(err.message || "Échec de la synchronisation", "error");
             if (syncStatus) {
-                syncStatus.textContent = err.message || "Échec Sync";
+                syncStatus.textContent = "Échec : " + (err.message || "Erreur");
                 syncStatus.classList.add('text-red-500');
             }
         } finally {
             // Re-enable buttons
-            [btnSyncMain, btnSyncDrawer].forEach(btn => {
+            [btnSyncFull, btnSyncResume].forEach(btn => {
                 if (btn) {
                     btn.disabled = false;
                     btn.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -71,21 +86,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateDbStatusUI() {
         if (!dbStatusText) return;
-        const count = localStorage.getItem('kost_articles_count');
-        const lastSync = localStorage.getItem('kost_last_sync');
+        const count = localStorage.getItem('kost_articles_count') || 0;
         
-        if (count && count > 0) {
+        if (count > 0) {
             dbStatusText.textContent = `${parseInt(count).toLocaleString()} articles`;
-            dbStatusText.classList.replace('text-slate-400', 'text-green-400');
+            dbStatusText.className = "text-green-400 font-bold";
         } else {
-            dbStatusText.textContent = "Vide";
-            dbStatusText.classList.replace('text-green-400', 'text-slate-400');
+            dbStatusText.textContent = "Vide / À synchroniser";
+            dbStatusText.className = "text-slate-500";
         }
     }
 
     // Attach events
-    if (btnSyncMain) btnSyncMain.addEventListener('click', triggerSync);
-    if (btnSyncDrawer) btnSyncDrawer.addEventListener('click', triggerSync);
+    if (btnSyncFull) btnSyncFull.addEventListener('click', () => triggerSync(false));
+    if (btnSyncResume) btnSyncResume.addEventListener('click', () => triggerSync(true));
 
     // Initial check
     updateDbStatusUI();

@@ -38,14 +38,14 @@ async function requestPersistence() {
 }
 
 /**
- * Synchronization: Fetch articles from Supabase in chunks
- * @param {Function} onProgress Callback for UI updates (current, total)
+ * Synchronization: Fetch articles from Supabase in chunks (V7 Force Sync)
+ * @param {Function} onProgress Callback for UI updates (current, total, eta)
+ * @param {Boolean} isResume If true, don't clear the table and start from existing count
  */
-async function syncCatalogue(onProgress) {
-    console.log("[DB] Starting full synchronization...");
+async function syncCatalogue(onProgress, isResume = false) {
+    console.log(`[DB] Starting ${isResume ? 'RESUME' : 'FULL'} synchronization (V7 FORCE)...`);
     
     // 1. Get total count
-    // Using count=estimated for 1.2M+ rows to avoid Supabase timeout (Error 500)
     const countResponse = await fetch(`${SUPABASE_URL}/rest/v1/produits_kiabi?select=count`, {
         headers: {
             'apikey': SUPABASE_KEY,
@@ -55,68 +55,84 @@ async function syncCatalogue(onProgress) {
     });
     
     if (!countResponse.ok) {
-        const errText = await countResponse.text();
-        console.error(`[DB] Supabase Count Error (${countResponse.status}):`, errText);
         throw new Error(`Erreur Serveur Supabase (${countResponse.status})`);
     }
     
     const contentRange = countResponse.headers.get('Content-Range');
     const totalItems = contentRange ? parseInt(contentRange.split('/')[1]) : 0;
     
-    console.log(`[DB] Total items to sync (exact): ${totalItems}`);
-    
-    // 2. Clear local table before sync
-    await db.catalogue_articles.clear();
-    
-    // 3. Paginated Fetch (5000 lines blocks)
-    const chunkSize = 5000;
+    // 2. Resume Logic: Count local items if resuming
     let offset = 0;
-    let totalSaved = 0;
+    if (isResume) {
+        offset = await db.catalogue_articles.count();
+        console.log(`[DB] Resuming from offset: ${offset}`);
+    } else {
+        await db.catalogue_articles.clear();
+    }
     
-    while (offset < totalItems) {
-        const end = Math.min(offset + chunkSize - 1, totalItems - 1);
+    // 3. Sync Settings
+    const chunkSize = 1000; // Smaller chunks for stability
+    const delay = 200;      // 200ms breathe time
+    let totalSaved = offset;
+    let startTime = Date.now();
+    
+    while (totalSaved < totalItems) {
+        const end = Math.min(totalSaved + chunkSize - 1, totalItems - 1);
         
-        const response = await fetch(`${SUPABASE_URL}/rest/v1/produits_kiabi?select=code_barres,code_article,couleur,taille,collection,groupe,departement&order=code_barres.asc`, {
-            headers: {
-                'apikey': SUPABASE_KEY,
-                'Range': `${offset}-${end}`
-            }
-        });
+        try {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/produits_kiabi?select=code_barres,code_article,couleur,taille,collection,groupe,departement&order=code_barres.asc`, {
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Range': `${totalSaved}-${end}`
+                }
+            });
 
-        if (!response.ok) {
-            const errText = await response.text();
-            console.error(`[DB] Supabase Sync Error at offset ${offset} (${response.status}):`, errText);
-            throw new Error(`Erreur Serveur Supabase (${response.status})`);
-        }
-        
-        const data = await response.json();
-        
-        // Map Supabase columns to local schema + TRIM strings
-        const mappedData = data.map(item => ({
-            gencod: String(item.code_barres || "").trim(),
-            ref_article: String(item.code_article || "").trim().toUpperCase(),
-            libelle: String(item.departement || 'ARTICLE').trim(),
-            couleur: String(item.couleur || "").trim().toUpperCase(),
-            taille: String(item.taille || "").trim().toUpperCase(),
-            groupe: String(item.groupe || "").trim().toUpperCase(),
-            departement: String(item.departement || "").trim().toUpperCase(),
-            collection: String(item.collection || "").trim().toUpperCase()
-        }));
-        
-        await db.catalogue_articles.bulkPut(mappedData);
-        
-        totalSaved += mappedData.length;
-        offset += chunkSize;
-        
-        if (onProgress) onProgress(Math.min(offset, totalItems), totalItems);
-        
-        // Log progress every 50k items
-        if (totalSaved % 50000 === 0 || totalSaved >= totalItems) {
-            console.log(`[DB] Progress: ${totalSaved} / ${totalItems} items saved.`);
+            if (!response.ok) throw new Error(`Fetch Error: ${response.status}`);
+            
+            let data = await response.json();
+            
+            const mappedData = data.map(item => ({
+                gencod: String(item.code_barres || "").trim(),
+                ref_article: String(item.code_article || "").trim().toUpperCase(),
+                libelle: String(item.departement || 'ARTICLE').trim(),
+                couleur: String(item.couleur || "").trim().toUpperCase(),
+                taille: String(item.taille || "").trim().toUpperCase(),
+                groupe: String(item.groupe || "").trim().toUpperCase(),
+                departement: String(item.departement || "").trim().toUpperCase(),
+                collection: String(item.collection || "").trim().toUpperCase()
+            }));
+            
+            await db.catalogue_articles.bulkPut(mappedData);
+            
+            totalSaved += mappedData.length;
+            
+            // Calculate ETA
+            const elapsed = (Date.now() - startTime) / 1000;
+            const processedSinceStart = totalSaved - offset;
+            const speed = processedSinceStart / elapsed; // items per second
+            const remaining = totalItems - totalSaved;
+            const etaSeconds = speed > 0 ? Math.round(remaining / speed) : 0;
+            
+            if (onProgress) onProgress(totalSaved, totalItems, etaSeconds);
+            
+            // Memory Management
+            data = null; 
+            
+            // Log progress
+            if (totalSaved % 10000 === 0) {
+                console.log(`[DB] Progress: ${totalSaved} / ${totalItems} (ETA: ${etaSeconds}s)`);
+            }
+
+            // Pause for disk writing and main thread breathing
+            await new Promise(resolve => setTimeout(resolve, delay));
+            
+        } catch (err) {
+            console.error(`[DB] Sync failed at ${totalSaved}:`, err);
+            throw err;
         }
     }
     
-    console.log(`[DB] Synchronization complete. Total items saved: ${totalSaved}`);
+    console.log(`[DB] Synchronization complete. Total items: ${totalSaved}`);
     localStorage.setItem('kost_last_sync', new Date().toISOString());
     localStorage.setItem('kost_articles_count', totalSaved);
 }
