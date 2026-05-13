@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kost-v4';
+const CACHE_NAME = 'kost-v6';
 const urlsToCache = [
   './',
   './index.html',
@@ -7,8 +7,14 @@ const urlsToCache = [
   './flo.html',
   './styles.css',
   './app.js',
+  './flo.js',
+  './database.js',
+  './sync.js',
+  './navigation.js',
+  './updater.js',
   './assets/favicon.png',
-  './assets/logo.png'
+  './assets/logo.png',
+  'https://unpkg.com/dexie/dist/dexie.js'
 ];
 
 self.addEventListener('install', event => {

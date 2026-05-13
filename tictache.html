@@ -11,6 +11,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+    <script src="database.js" defer></script>
+    <script src="sync.js" defer></script>
     <script src="navigation.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
     <link rel="stylesheet" href="styles.css">
@@ -527,9 +530,8 @@
         refLoader.classList.remove('hidden');
         ttRef.blur();
         try {
-            const data = await supabaseFetch('produits_kiabi', 'couleur', { code_article: val });
-            if (data && data.length > 0) {
-                const colors = [...new Set(data.map(i => i.couleur))];
+            const colors = await getColors(val);
+            if (colors && colors.length > 0) {
                 ttColor.innerHTML = '<option value="">Choisir une couleur...</option>';
                 colors.forEach(c => ttColor.innerHTML += `<option value="${c}">${c}</option>`);
                 groupColor.classList.remove('hidden');
@@ -538,10 +540,10 @@
                 currentRef = val;
                 setStep(2);
             } else {
-                showToast('Référence introuvable', 'error');
+                showToast('Référence introuvable localement', 'error');
             }
         } catch (err) {
-            showToast('Erreur connexion Supabase', 'error');
+            showToast('Erreur recherche locale', 'error');
         } finally {
             refLoader.classList.add('hidden');
         }
@@ -551,9 +553,8 @@
         const color = e.target.value;
         if (!color) { groupSize.classList.add('hidden'); return; }
         try {
-            const data = await supabaseFetch('produits_kiabi', 'taille', { code_article: currentRef, couleur: color });
-            if (data && data.length > 0) {
-                const sizes = [...new Set(data.map(i => i.taille))];
+            const sizes = await getSizes(currentRef, color);
+            if (sizes && sizes.length > 0) {
                 ttSize.innerHTML = '<option value="">Choisir une taille...</option>';
                 sizes.forEach(s => ttSize.innerHTML += `<option value="${s}">${s}</option>`);
                 groupSize.classList.remove('hidden');
@@ -561,7 +562,7 @@
                 setStep(3);
             }
         } catch (err) {
-            showToast('Erreur récupération tailles', 'error');
+            showToast('Erreur recherche locale', 'error');
         }
     });
 
@@ -569,15 +570,11 @@
         const size = e.target.value;
         if (!size) return;
         try {
-            const data = await supabaseFetch('produits_kiabi', 'code_barres,collection', {
-                code_article: currentRef,
-                couleur: ttColor.value,
-                taille: size
-            }, { order: 'collection.desc', limit: 1 });
+            const article = await getArticle(currentRef, ttColor.value, size);
 
-            if (data && data.length > 0) {
-                currentBarcode = data[0].code_barres;
-                currentCollection = data[0].collection;
+            if (article) {
+                currentBarcode = article.gencod;
+                currentCollection = article.collection;
                 renderBarcode(currentBarcode, currentRef, currentCollection);
                 // Show print card, hide placeholder
                 document.getElementById('barcode-placeholder').style.display = 'none';
@@ -586,10 +583,10 @@
                 pc.style.display = 'flex';
                 showToast(`Code-barres trouvé (${currentCollection})`, 'success');
             } else {
-                showToast('Référence introuvable', 'error');
+                showToast('Article introuvable', 'error');
             }
         } catch (err) {
-            showToast('Erreur Supabase', 'error');
+            showToast('Erreur recherche locale', 'error');
         }
     });
 
@@ -821,7 +818,27 @@
             </a>
         </nav>
 
-        <div class="absolute bottom-0 left-0 w-full p-6 border-t border-white/5">
+        <div class="absolute bottom-0 left-0 w-full p-6 border-t border-white/5 space-y-4">
+            <!-- Global Sync UI in Drawer -->
+            <div class="space-y-3">
+                <button id="btn-sync-database" class="w-full bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 px-4 py-3 rounded border border-orange-600/30 text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all">
+                    <i data-lucide="download-cloud" class="w-4 h-4"></i>
+                    Sync Base Locale
+                </button>
+                <div id="sync-progress-container" class="hidden space-y-2">
+                    <div class="flex justify-between text-[9px] font-bold text-orange-500 uppercase tracking-widest">
+                        <span id="sync-status">Synchro...</span>
+                        <span id="sync-count">0 / 0</span>
+                    </div>
+                    <div class="w-full h-1 bg-slate-900 rounded-full overflow-hidden border border-white/5">
+                        <div id="sync-bar" class="h-full bg-orange-500 transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div id="sync-info" class="text-[8px] text-slate-500 font-bold uppercase tracking-widest text-center">
+                    Statut : <span id="local-db-status" class="text-slate-400">Non chargée</span>
+                </div>
+            </div>
+
             <div class="flex items-center gap-3 text-slate-500">
                 <i data-lucide="settings" class="w-4 h-4"></i>
                 <span class="text-xs font-bold uppercase tracking-widest">Paramètres</span>

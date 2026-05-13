@@ -322,21 +322,20 @@ if (modalRef) {
             sizeGroup.classList.add('hidden');
 
             try {
-                const data = await supabaseFetch('produits_kiabi', 'couleur', { code_article: val });
+                const uniqueColors = await getColors(val);
                 
-                if (data && data.length > 0) {
-                    const uniqueColors = [...new Set(data.map(i => i.couleur))];
+                if (uniqueColors && uniqueColors.length > 0) {
                     modalColor.innerHTML = '<option value="">Choisir une couleur...</option>';
                     uniqueColors.forEach(color => {
                         modalColor.innerHTML += `<option value="${color}">${color}</option>`;
                     });
                     colorGroup.classList.remove('hidden');
                 } else {
-                    showToast('Référence introuvable sur Supabase', 'error');
+                    showToast('Référence introuvable localement', 'error');
                 }
             } catch (err) {
                 console.error(err);
-                showToast('Erreur de connexion Supabase', 'error');
+                showToast('Erreur recherche locale', 'error');
             } finally {
                 searchLoader.classList.add('hidden');
             }
@@ -361,13 +360,9 @@ if (modalColor) {
         sizeGroup.classList.add('hidden');
 
         try {
-            const data = await supabaseFetch('produits_kiabi', 'taille', { 
-                code_article: ref, 
-                couleur: color 
-            });
+            const uniqueSizes = await getSizes(ref, color);
             
-            if (data && data.length > 0) {
-                const uniqueSizes = [...new Set(data.map(i => i.taille))];
+            if (uniqueSizes && uniqueSizes.length > 0) {
                 modalSize.innerHTML = '<option value="">Choisir une taille...</option>';
                 uniqueSizes.forEach(size => {
                     modalSize.innerHTML += `<option value="${size}">${size}</option>`;
@@ -376,7 +371,7 @@ if (modalColor) {
             }
         } catch (err) {
             console.error(err);
-            showToast('Erreur récupération tailles', 'error');
+            showToast('Erreur recherche locale', 'error');
         } finally {
             searchLoader.classList.add('hidden');
         }
@@ -394,18 +389,11 @@ if (modalSize) {
         searchLoader.classList.add('hidden');
 
         try {
-            const data = await supabaseFetch('produits_kiabi', 'code_barres,collection', { 
-                code_article: ref, 
-                couleur: color,
-                taille: size
-            }, { 
-                order: 'collection.desc', 
-                limit: 1 
-            });
+            const article = await getArticle(ref, color, size);
             
-            if (data && data.length > 0) {
-                const barcode = data[0].code_barres;
-                const collection = data[0].collection;
+            if (article) {
+                const barcode = article.gencod;
+                const collection = article.collection;
                 
                 console.log(`Collection identifiée : ${collection}`);
                 barcodeInput.value = barcode;
@@ -415,11 +403,11 @@ if (modalSize) {
                 // Insertion directe
                 performSearch();
             } else {
-                showToast('Référence introuvable', 'error');
+                showToast('Article introuvable', 'error');
             }
         } catch (err) {
             console.error(err);
-            showToast('Erreur récupération code-barres', 'error');
+            showToast('Erreur recherche locale', 'error');
         } finally {
             searchLoader.classList.add('hidden');
         }
