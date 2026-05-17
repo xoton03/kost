@@ -168,11 +168,114 @@ searchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') e.target.blur();
 });
 
+// Barcode Scanner Integration with html5-qrcode
+let html5QrCode = null;
+
+async function startScanner() {
+    const scannerModal = document.getElementById('scanner-modal');
+    if (!scannerModal) return;
+
+    scannerModal.classList.remove('hidden');
+    scannerModal.classList.add('flex');
+    
+    const statusEl = document.getElementById('scanner-status');
+    if (statusEl) statusEl.textContent = 'INITIALIZING_CAMERA...';
+    
+    try {
+        if (!html5QrCode) {
+            // Instantiate with the scanner-reader div ID
+            html5QrCode = new Html5Qrcode("scanner-reader");
+        }
+        
+        const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+            console.log(`[Flo Scanner] Success: ${decodedText}`, decodedResult);
+            
+            // Populate search and query database
+            if (searchInput) {
+                searchInput.value = decodedText;
+                performSearch();
+            }
+            
+            showToast(`SCANNED_CODE_${decodedText}`, 'success');
+            stopScanner();
+        };
+        
+        const config = {
+            fps: 15,
+            qrbox: (width, height) => {
+                // Returns scan window dimensions optimized for linear barcodes
+                return {
+                    width: Math.min(width * 0.85, 320),
+                    height: Math.min(height * 0.35, 140)
+                };
+            },
+            aspectRatio: 1.333333
+        };
+        
+        await html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            qrCodeSuccessCallback
+        );
+        
+        if (statusEl) statusEl.textContent = 'ACTIVE_READY';
+        
+    } catch (err) {
+        console.error('[Flo Scanner] Error initiating scanner:', err);
+        if (statusEl) statusEl.textContent = 'ERROR_CAMERA_ACCESS_DENIED';
+        showToast('CAMERA_ACCESS_DENIED', 'error');
+        // Hide modal automatically on error after 2 seconds
+        setTimeout(stopScanner, 2000);
+    }
+}
+
+async function stopScanner() {
+    const scannerModal = document.getElementById('scanner-modal');
+    if (!scannerModal) return;
+
+    scannerModal.classList.add('hidden');
+    scannerModal.classList.remove('flex');
+    
+    if (html5QrCode && html5QrCode.isScanning) {
+        try {
+            await html5QrCode.stop();
+        } catch (err) {
+            console.error('[Flo Scanner] Stop error:', err);
+        }
+    }
+}
+
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
     // Clear results on load
     resultsBodyMobile.innerHTML = '';
     if (resultsBodyDesktop) resultsBodyDesktop.innerHTML = '';
-    console.log('[Flo UI] Initialized with shared database.');
+    
+    // Bind Scanner Buttons
+    if (btnScan) {
+        btnScan.addEventListener('click', (e) => {
+            e.preventDefault();
+            startScanner();
+        });
+    }
+
+    const btnCloseScanner = document.getElementById('btn-close-scanner');
+    if (btnCloseScanner) {
+        btnCloseScanner.addEventListener('click', (e) => {
+            e.preventDefault();
+            stopScanner();
+        });
+    }
+
+    const scannerModal = document.getElementById('scanner-modal');
+    if (scannerModal) {
+        scannerModal.addEventListener('click', (e) => {
+            if (e.target === scannerModal) {
+                stopScanner();
+            }
+        });
+    }
+    
+    console.log('[Flo UI] Initialized with shared database and camera barcode scanner.');
 });
 

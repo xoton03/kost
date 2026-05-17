@@ -131,12 +131,21 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #ff6d00;
         }
+        @keyframes scan-laser {
+            0% { top: 0%; opacity: 0.3; }
+            50% { top: 100%; opacity: 1; }
+            100% { top: 0%; opacity: 0.3; }
+        }
+        .animate-laser {
+            animation: scan-laser 3s linear infinite;
+        }
     </style>
 
     <script src="lucide.js" defer></script>
     <script src="dexie.js" defer></script>
     <script src="database.js" defer></script>
     <script src="sync.js" defer></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="flo.js" defer></script>
     <script src="navigation.js" defer></script>
     <link rel="stylesheet" href="styles.css">
@@ -293,6 +302,46 @@
     </aside>
 
     <div id="toast-container" class="fixed bottom-4 right-4 z-[250] flex flex-col gap-2"></div>
+
+    <!-- Barcode Scanner Modal Overlay -->
+    <div id="scanner-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[300] hidden flex flex-col items-center justify-center p-4">
+        <!-- Close Button (Absolute on top right) -->
+        <button id="btn-close-scanner" class="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors active:scale-95 z-50 flex items-center justify-center bg-black/40 border border-outline w-12 h-12 rounded-none" title="Fermer le scanner">
+            <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+
+        <!-- Scanner Card Container -->
+        <div class="w-full max-w-md border border-outline bg-surface p-6 flex flex-col gap-6 relative rounded-none">
+            <!-- Aesthetic Corner Accents -->
+            <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[#ff6d00]"></div>
+            <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[#ff6d00]"></div>
+            <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[#ff6d00]"></div>
+            <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[#ff6d00]"></div>
+
+            <div class="flex flex-col gap-1 border-b border-outline pb-4">
+                <span class="font-label-caps text-label-caps text-primary uppercase">CAMERA_SCANNER_ACTIVE</span>
+                <span class="font-body-mono text-[10px] text-slate-500 uppercase tracking-widest font-bold">HOLD BARCODE WITHIN VIEWPORT</span>
+            </div>
+
+            <!-- Video/Scanner Render Area -->
+            <div class="relative w-full aspect-[4/3] bg-black border border-outline overflow-hidden flex items-center justify-center rounded-none">
+                <!-- HTML5 QR Code element -->
+                <div id="scanner-reader" class="w-full h-full bg-black"></div>
+                
+                <!-- Laser line scanner animation -->
+                <div id="scanner-laser" class="absolute left-0 right-0 h-0.5 bg-[#ff6d00] shadow-[0_0_10px_#ff6d00] animate-laser pointer-events-none z-10" style="top: 0%;"></div>
+            </div>
+
+            <!-- Status -->
+            <div class="flex flex-col gap-2">
+                <span class="font-label-caps text-[9px] text-slate-400 uppercase">Status & Helpers</span>
+                <div class="font-body-mono text-xs text-slate-500 flex items-center justify-between">
+                    <span>STATUS:</span>
+                    <span id="scanner-status" class="text-primary font-bold">AWAITING_CAMERA_PERMISSION</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="lucide.js" defer></script>
     <script src="dexie.js" defer></script>
