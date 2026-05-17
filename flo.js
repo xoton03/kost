@@ -105,7 +105,6 @@ function renderResults(results) {
             <div class="p-6 border-b border-outline">
                 <h2 class="font-headline-md text-headline-md text-white font-bold leading-tight uppercase tracking-tight">${formattedTitle}</h2>
                 <div class="flex flex-wrap items-center gap-2 mt-2">
-                    ${brand ? `<span class="font-body-mono text-label-caps text-primary border border-primary-container px-2 py-0.5">${brand}</span>` : ''}
                     ${genre ? `<span class="font-body-mono text-label-caps text-on-surface-variant border border-outline px-2 py-0.5">${genre}</span>` : ''}
                     ${typeArticle ? `<span class="font-body-mono text-label-caps text-on-surface-variant border border-outline px-2 py-0.5">${typeArticle}</span>` : ''}
                     ${couleur ? `<span class="font-body-mono text-label-caps text-slate-400 border border-outline px-2 py-0.5">${couleur}</span>` : ''}
@@ -144,13 +143,16 @@ function renderResults(results) {
                     <span class="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">GENCOD</span>
                     <span class="font-body-mono text-body-mono text-white">${item.gencod}</span>
                 </div>
-                ${marche ? `
                 <div class="bg-surface p-4 flex flex-col">
                     <span class="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">MARCHÉ</span>
-                    <span class="font-body-mono text-body-mono text-white">${marche}</span>
-                </div>` : ''}
-                ${groupe ? `
+                    <span class="font-body-mono text-body-mono text-white">${marche || '--'}</span>
+                </div>
                 <div class="bg-surface p-4 flex flex-col">
+                    <span class="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">MARQUE</span>
+                    <span class="font-body-mono text-body-mono text-primary font-bold">${brand || '--'}</span>
+                </div>
+                ${groupe ? `
+                <div class="bg-surface p-4 flex flex-col col-span-2">
                     <span class="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">GROUPE</span>
                     <span class="font-body-mono text-body-mono text-white">${groupe}</span>
                 </div>` : ''}
