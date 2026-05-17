@@ -75,23 +75,41 @@ function renderResults(results) {
         return;
     }
 
+    const cleanStr = (val) => {
+        if (val === undefined || val === null) return "";
+        const s = String(val).trim();
+        return (s === "0" || s.toLowerCase() === "null" || s.toLowerCase() === "undefined") ? "" : s;
+    };
+
     // High fidelity brutalist grid rendering
     resultsBodyMobile.innerHTML = results.map(item => {
         const isPromo = item.prix_reduit && item.prix_reduit < item.prix_tarif;
         const price = { tarif: item.prix_tarif || 0, reduit: isPromo ? item.prix_reduit : null };
-        const formattedTitle = String(item.libelle || "ARTICLE").trim().toUpperCase().replace(/\s+/g, '_');
-        const formattedRef = String(item.ref_article || "").trim().toUpperCase();
+        
+        const rawTitle = cleanStr(item.libelle);
+        const formattedTitle = rawTitle ? rawTitle.toUpperCase().replace(/\s+/g, '_') : "ARTICLE_SANS_NOM";
+        
+        const rawRef = cleanStr(item.ref_article);
+        const formattedRef = rawRef ? rawRef.toUpperCase() : "SANS_REF";
+        
+        const brand = cleanStr(item.brand);
+        const genre = cleanStr(item.genre);
+        const typeArticle = cleanStr(item.type_article);
+        const couleur = cleanStr(item.couleur);
+        const taille = cleanStr(item.taille);
+        const marche = cleanStr(item.marche);
+        const groupe = cleanStr(item.groupe);
         
         return `
         <section class="flex flex-col border border-outline bg-surface animate-entrance">
             <div class="p-6 border-b border-outline">
                 <h2 class="font-headline-md text-headline-md text-white font-bold leading-tight uppercase tracking-tight">${formattedTitle}</h2>
                 <div class="flex flex-wrap items-center gap-2 mt-2">
-                    ${item.brand ? `<span class="font-body-mono text-label-caps text-primary border border-primary-container px-2 py-0.5">${item.brand}</span>` : ''}
-                    ${item.genre ? `<span class="font-body-mono text-label-caps text-on-surface-variant border border-outline px-2 py-0.5">${item.genre}</span>` : ''}
-                    ${item.type_article ? `<span class="font-body-mono text-label-caps text-on-surface-variant border border-outline px-2 py-0.5">${item.type_article}</span>` : ''}
-                    ${item.couleur ? `<span class="font-body-mono text-label-caps text-slate-400 border border-outline px-2 py-0.5">${item.couleur}</span>` : ''}
-                    ${item.taille ? `<span class="font-body-mono text-label-caps text-slate-400 border border-outline px-2 py-0.5">T_${item.taille}</span>` : ''}
+                    ${brand ? `<span class="font-body-mono text-label-caps text-primary border border-primary-container px-2 py-0.5">${brand}</span>` : ''}
+                    ${genre ? `<span class="font-body-mono text-label-caps text-on-surface-variant border border-outline px-2 py-0.5">${genre}</span>` : ''}
+                    ${typeArticle ? `<span class="font-body-mono text-label-caps text-on-surface-variant border border-outline px-2 py-0.5">${typeArticle}</span>` : ''}
+                    ${couleur ? `<span class="font-body-mono text-label-caps text-slate-400 border border-outline px-2 py-0.5">${couleur}</span>` : ''}
+                    ${taille ? `<span class="font-body-mono text-label-caps text-slate-400 border border-outline px-2 py-0.5">T_${taille}</span>` : ''}
                 </div>
             </div>
             
@@ -126,15 +144,15 @@ function renderResults(results) {
                     <span class="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">GENCOD</span>
                     <span class="font-body-mono text-body-mono text-white">${item.gencod}</span>
                 </div>
-                ${item.marche ? `
+                ${marche ? `
                 <div class="bg-surface p-4 flex flex-col">
                     <span class="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">MARCHÉ</span>
-                    <span class="font-body-mono text-body-mono text-white">${item.marche}</span>
+                    <span class="font-body-mono text-body-mono text-white">${marche}</span>
                 </div>` : ''}
-                ${item.groupe ? `
+                ${groupe ? `
                 <div class="bg-surface p-4 flex flex-col">
                     <span class="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">GROUPE</span>
-                    <span class="font-body-mono text-body-mono text-white">${item.groupe}</span>
+                    <span class="font-body-mono text-body-mono text-white">${groupe}</span>
                 </div>` : ''}
             </div>
             
