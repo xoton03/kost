@@ -17,33 +17,7 @@ function formatPrice(val) {
     return new Intl.NumberFormat('fr-FR', { useGrouping: true }).format(num).replace(/\s/g, '.');
 }
 
-// Deterministic dynamic price generator for high-fidelity brutalist demonstration
-function getDeterministicPrice(item) {
-    if (item.prix_tarif) {
-        return {
-            tarif: item.prix_tarif,
-            reduit: item.prix_reduit
-        };
-    }
-    // Generate deterministic price from ref or gencod so it is always consistent
-    const str = item.ref_article || item.gencod || "12345";
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const basePrice = Math.floor(Math.abs(hash) % 14500) + 500;
-    // Round to nearest 50 or 100 DA
-    const tarif = Math.round(basePrice / 100) * 100;
-    
-    // 30% chance of a discount
-    const isPromo = (Math.abs(hash) % 10) < 3;
-    let reduit = null;
-    if (isPromo) {
-        const discountPercent = (Math.floor(Math.abs(hash / 10) % 5) + 1) * 10; // 10% to 50%
-        reduit = Math.round((tarif * (1 - discountPercent / 100)) / 100) * 100;
-    }
-    return { tarif, reduit };
-}
+
 
 // Global Manifest Action Handler (exposed to window for inline onclick attributes)
 window.handleAddToManifest = function(ref, name) {
@@ -103,8 +77,9 @@ function renderResults(results) {
 
     // High fidelity brutalist grid rendering
     resultsBodyMobile.innerHTML = results.map(item => {
-        const price = getDeterministicPrice(item);
-        const formattedTitle = String(item.libelle || item.departement || "ARTICLE").trim().toUpperCase().replace(/\s+/g, '_');
+        const isPromo = item.prix_reduit && item.prix_reduit < item.prix_tarif;
+        const price = { tarif: item.prix_tarif || 0, reduit: isPromo ? item.prix_reduit : null };
+        const formattedTitle = String(item.libelle || "ARTICLE").trim().toUpperCase().replace(/\s+/g, '_');
         const formattedRef = String(item.ref_article || "").trim().toUpperCase();
         
         return `
@@ -112,8 +87,9 @@ function renderResults(results) {
             <div class="p-6 border-b border-outline">
                 <h2 class="font-headline-md text-headline-md text-white font-bold leading-tight uppercase tracking-tight">${formattedTitle}</h2>
                 <div class="flex flex-wrap items-center gap-2 mt-2">
-                    <span class="font-body-mono text-label-caps text-on-surface-variant border border-outline px-2 py-0.5">INDUSTRIAL_GRADE</span>
-                    <span class="font-body-mono text-label-caps text-primary border border-primary-container px-2 py-0.5">IN_STOCK</span>
+                    ${item.brand ? `<span class="font-body-mono text-label-caps text-primary border border-primary-container px-2 py-0.5">${item.brand}</span>` : ''}
+                    ${item.genre ? `<span class="font-body-mono text-label-caps text-on-surface-variant border border-outline px-2 py-0.5">${item.genre}</span>` : ''}
+                    ${item.type_article ? `<span class="font-body-mono text-label-caps text-on-surface-variant border border-outline px-2 py-0.5">${item.type_article}</span>` : ''}
                     ${item.couleur ? `<span class="font-body-mono text-label-caps text-slate-400 border border-outline px-2 py-0.5">${item.couleur}</span>` : ''}
                     ${item.taille ? `<span class="font-body-mono text-label-caps text-slate-400 border border-outline px-2 py-0.5">T_${item.taille}</span>` : ''}
                 </div>
@@ -150,6 +126,16 @@ function renderResults(results) {
                     <span class="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">GENCOD</span>
                     <span class="font-body-mono text-body-mono text-white">${item.gencod}</span>
                 </div>
+                ${item.marche ? `
+                <div class="bg-surface p-4 flex flex-col">
+                    <span class="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">MARCHÉ</span>
+                    <span class="font-body-mono text-body-mono text-white">${item.marche}</span>
+                </div>` : ''}
+                ${item.groupe ? `
+                <div class="bg-surface p-4 flex flex-col">
+                    <span class="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">GROUPE</span>
+                    <span class="font-body-mono text-body-mono text-white">${item.groupe}</span>
+                </div>` : ''}
             </div>
             
             <button onclick="handleAddToManifest('${formattedRef}', '${formattedTitle}')" class="w-full bg-primary-container text-on-primary-container py-6 font-label-caps text-label-caps font-black uppercase hover:bg-white hover:text-black transition-colors">

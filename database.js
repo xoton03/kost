@@ -10,8 +10,8 @@ window.SUPABASE_KEY = window.SUPABASE_KEY || "sb_publishable_gshF6Y08DYJYO9c8Z_C
 const db = new Dexie("KostSharedDB");
 
 // Schema Definition (V8)
-db.version(4).stores({
-    catalogue_articles: "gencod, ref_article, libelle, couleur, taille, groupe, departement"
+db.version(5).stores({
+    catalogue_articles: "gencod, ref_article, libelle, prix_tarif, prix_reduit, brand, type_article, taille, couleur, marche, genre, groupe"
 });
 
 // Safeguard for primary key changes: 
@@ -46,7 +46,7 @@ async function syncCatalogue(onProgress, isResume = false) {
     console.log(`[DB] Starting ${isResume ? 'RESUME' : 'FULL'} synchronization (V7 FORCE)...`);
     
     // 1. Get total count
-    const countResponse = await fetch(`${SUPABASE_URL}/rest/v1/produits_kiabi?select=count`, {
+    const countResponse = await fetch(`${SUPABASE_URL}/rest/v1/base_flo?select=count`, {
         headers: {
             'apikey': SUPABASE_KEY,
             'Range-Unit': 'items',
@@ -80,7 +80,7 @@ async function syncCatalogue(onProgress, isResume = false) {
         const end = Math.min(totalSaved + chunkSize - 1, totalItems - 1);
         
         try {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/produits_kiabi?select=code_barres,code_article,couleur,taille,collection,groupe,departement&order=code_barres.asc`, {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/base_flo?select=*`, {
                 headers: {
                     'apikey': SUPABASE_KEY,
                     'Range': `${totalSaved}-${end}`
@@ -92,14 +92,18 @@ async function syncCatalogue(onProgress, isResume = false) {
             let data = await response.json();
             
             const mappedData = data.map(item => ({
-                gencod: String(item.code_barres || "").trim(),
-                ref_article: String(item.code_article || "").trim().toUpperCase(),
-                libelle: String(item.departement || 'ARTICLE').trim(),
-                couleur: String(item.couleur || "").trim().toUpperCase(),
-                taille: String(item.taille || "").trim().toUpperCase(),
-                groupe: String(item.groupe || "").trim().toUpperCase(),
-                departement: String(item.departement || "").trim().toUpperCase(),
-                collection: String(item.collection || "").trim().toUpperCase()
+                gencod: String(item['Code-barres article'] || "").trim(),
+                ref_article: String(item['Ref'] || "").trim().toUpperCase(),
+                libelle: String(item["Nom de l'article"] || 'ARTICLE').trim(),
+                prix_tarif: item['Prix'] || null,
+                prix_reduit: item['Prix solde'] || null,
+                brand: String(item['Brand'] || "").trim().toUpperCase(),
+                type_article: String(item["Type de l'article"] || "").trim().toUpperCase(),
+                taille: String(item['Taille'] || "").trim().toUpperCase(),
+                couleur: String(item['Couleur'] || "").trim().toUpperCase(),
+                marche: String(item['March'] || "").trim().toUpperCase(),
+                genre: String(item["Genre de l'article"] || "").trim().toUpperCase(),
+                groupe: String(item["Groupe de l'article"] || "").trim().toUpperCase()
             }));
             
             await db.catalogue_articles.bulkPut(mappedData);
