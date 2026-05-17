@@ -462,11 +462,28 @@ function showToast(message, type = 'success') {
 }
 
 // Search Logic
-async function performSearch() {
+let searchTimeout = null;
+
+function debouncedSearch() {
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+    searchTimeout = setTimeout(() => {
+        performSearch(false);
+    }, 150);
+}
+
+async function performSearch(force = false) {
     const query = searchInput.value.trim();
-    if (!query || query.length < 3) {
+    if (!query) {
         resultsBodyMobile.innerHTML = '';
         if (resultsBodyDesktop) resultsBodyDesktop.innerHTML = '';
+        return;
+    }
+
+    // Bypass length check if query is purely numeric (barcode) or if search is forced (e.g. Enter, camera scan)
+    const isNumeric = /^\d+$/.test(query);
+    if (!force && !isNumeric && query.length < 3) {
         return;
     }
 
@@ -582,9 +599,22 @@ function renderResults(results) {
 }
 
 // Event Listeners
-searchInput.addEventListener('input', performSearch);
+searchInput.addEventListener('input', debouncedSearch);
+searchInput.addEventListener('change', () => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    performSearch(true);
+});
+searchInput.addEventListener('paste', () => {
+    if (searchTimeout) clearTimeout(searchTimeout);
+    setTimeout(() => performSearch(true), 50);
+});
 searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') e.target.blur();
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        if (searchTimeout) clearTimeout(searchTimeout);
+        performSearch(true);
+        e.target.blur();
+    }
 });
 
 // Barcode Scanner Integration with html5-qrcode
@@ -612,7 +642,7 @@ async function startScanner() {
             // Populate search and query database
             if (searchInput) {
                 searchInput.value = decodedText;
-                performSearch();
+                performSearch(true);
             }
             
             showToast(`SCANNED_CODE_${decodedText}`, 'success');
