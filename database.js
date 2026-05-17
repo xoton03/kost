@@ -214,16 +214,50 @@ async function getArticleByGencod(gencod) {
 async function searchArticles(query, limit = 50) {
     if (!query) return [];
     
-    // Exact Gencod search (High priority)
-    const exact = await db.catalogue_articles.get(query);
-    if (exact) return [exact];
+    const cleanQuery = query.trim();
+    const results = [];
     
-    // Reference prefix search
-    return await db.catalogue_articles
-        .where('ref_article')
-        .startsWithIgnoreCase(query)
-        .limit(limit)
-        .toArray();
+    // 1. If the query is numeric, search by gencod prefix
+    if (/^\d+$/.test(cleanQuery)) {
+        let gencodMatches = await db.catalogue_articles
+            .where('gencod')
+            .startsWith(cleanQuery)
+            .limit(limit)
+            .toArray();
+            
+        results.push(...gencodMatches);
+        
+        // Handle potential leading zero truncation from bigint database types
+        if (results.length === 0 && cleanQuery.startsWith('0')) {
+            const strippedQuery = cleanQuery.replace(/^0+/, '');
+            if (strippedQuery.length > 0) {
+                gencodMatches = await db.catalogue_articles
+                    .where('gencod')
+                    .startsWith(strippedQuery)
+                    .limit(limit)
+                    .toArray();
+                results.push(...gencodMatches);
+            }
+        }
+    }
+    
+    // 2. If results are still below the limit, search by reference prefix
+    if (results.length < limit) {
+        const refMatches = await db.catalogue_articles
+            .where('ref_article')
+            .startsWithIgnoreCase(cleanQuery)
+            .limit(limit - results.length)
+            .toArray();
+            
+        // Avoid duplicates
+        for (const item of refMatches) {
+            if (!results.some(r => r.gencod === item.gencod)) {
+                results.push(item);
+            }
+        }
+    }
+    
+    return results;
 }
 
 // Request persistence on load
