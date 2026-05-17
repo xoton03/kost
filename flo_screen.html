@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Flo - Mobile Price Search</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-fixed-dim": "#c6c6c7",
+                      "tertiary-fixed-dim": "#c7c6c6",
+                      "tertiary-fixed": "#e3e2e2",
+                      "outline-variant": "#594136",
+                      "surface-variant": "#41312a",
+                      "surface-container-low": "#261812",
+                      "primary": "#ffb692",
+                      "secondary-fixed": "#e2e2e2",
+                      "surface-container-highest": "#41312a",
+                      "secondary": "#c6c6c7",
+                      "on-primary": "#562000",
+                      "surface-tint": "#ffb692",
+                      "inverse-surface": "#f7ddd2",
+                      "primary-container": "#ff6d00",
+                      "surface-container-high": "#362720",
+                      "on-error-container": "#ffdad6",
+                      "background": "#0A0A0A",
+                      "surface-bright": "#46362e",
+                      "on-background": "#f7ddd2",
+                      "on-secondary-fixed-variant": "#454747",
+                      "on-primary-container": "#582100",
+                      "outline": "#333333",
+                      "on-tertiary": "#2f3131",
+                      "error-container": "#93000a",
+                      "surface-dim": "#1d100a",
+                      "tertiary": "#c7c6c6",
+                      "on-primary-fixed": "#341100",
+                      "on-secondary-container": "#b4b5b5",
+                      "on-tertiary-fixed-variant": "#464747",
+                      "primary-fixed-dim": "#ffb692",
+                      "inverse-primary": "#9f4200",
+                      "on-tertiary-container": "#313232",
+                      "surface": "#1A1A1A",
+                      "on-primary-fixed-variant": "#7a3000",
+                      "on-surface": "#f7ddd2",
+                      "on-secondary": "#2f3131",
+                      "error": "#ffb4ab",
+                      "surface-container-lowest": "#170b06",
+                      "on-error": "#690005",
+                      "secondary-container": "#454747",
+                      "primary-fixed": "#ffdbcb",
+                      "tertiary-container": "#9a9a9a",
+                      "on-tertiary-fixed": "#1a1c1c",
+                      "on-surface-variant": "#e2bfb0",
+                      "inverse-on-surface": "#3d2d26",
+                      "surface-container": "#2a1c16",
+                      "on-secondary-fixed": "#1a1c1c"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0px",
+                      "lg": "0px",
+                      "xl": "0px",
+                      "full": "0px"
+              },
+              "spacing": {
+                      "margin-desktop": "32px",
+                      "margin-mobile": "16px",
+                      "unit": "4px",
+                      "sidebar-width": "240px",
+                      "gutter": "16px"
+              },
+              "fontFamily": {
+                      "body-main": ["Inter"],
+                      "body-mono": ["JetBrains Mono"],
+                      "headline-md-mobile": ["Space Grotesk"],
+                      "label-caps": ["Space Grotesk"],
+                      "headline-md": ["Space Grotesk"],
+                      "display-lg": ["Space Grotesk"]
+              },
+              "fontSize": {
+                      "body-main": ["14px", {"lineHeight": "1.5", "letterSpacing": "0em", "fontWeight": "400"}],
+                      "body-mono": ["13px", {"lineHeight": "1.4", "letterSpacing": "-0.02em", "fontWeight": "400"}],
+                      "headline-md-mobile": ["20px", {"lineHeight": "1.2", "letterSpacing": "0.08em", "fontWeight": "600"}],
+                      "label-caps": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.15em", "fontWeight": "500"}],
+                      "headline-md": ["24px", {"lineHeight": "1.2", "letterSpacing": "0.08em", "fontWeight": "600"}],
+                      "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "0.05em", "fontWeight": "700"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #0A0A0A;
+            color: #FFFFFF;
+        }
+        .terminal-blink::after {
+            content: '_';
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            from, to { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="font-body-main selection:bg-primary-container selection:text-white">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-margin-mobile h-16 bg-background border-b border-outline">
+<div class="flex items-center gap-3">
+<h1 class="font-headline-md-mobile text-headline-md-mobile font-bold tracking-widest text-primary uppercase">FLO_CMD</h1>
+</div>
+</header>
+<!-- Main Content -->
+<main class="pt-20 pb-24 px-4 flex flex-col gap-6"><section class="flex flex-col gap-2 mb-8">
+<label class="font-label-caps text-label-caps text-primary uppercase ml-1">SEARCH_CMD</label>
+<div class="border border-outline bg-surface p-4">
+<input class="bg-transparent border-none focus:ring-0 p-0 text-body-main font-body-mono placeholder:opacity-30 uppercase w-full" placeholder="ENTER_PRODUCT_ID" type="text"/>
+</div>
+</section>
+<section class="flex flex-col border border-outline bg-surface">
+<div class="p-6 border-b border-outline">
+<h2 class="font-headline-md text-headline-md text-white font-bold leading-tight uppercase tracking-tight">COFFRET_ELECTRIQUE_V3</h2>
+<div class="flex items-center gap-2 mt-2">
+<span class="font-body-mono text-label-caps text-on-surface-variant border border-outline px-2 py-0.5">INDUSTRIAL_GRADE</span>
+<span class="font-body-mono text-label-caps text-primary border border-primary-container px-2 py-0.5">IN_STOCK</span>
+</div>
+</div>
+<div class="p-6 border-b border-outline flex flex-col items-start gap-1">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">UNIT_PRICE_NET</span>
+<div class="flex items-baseline gap-2">
+<span class="font-display-lg text-6xl text-primary-container font-black tracking-tighter">1.500</span>
+<span class="font-headline-md text-2xl text-primary-container font-bold">DA</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-px bg-outline">
+<div class="bg-surface p-4 flex flex-col">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">REFERENCE</span>
+<span class="font-body-mono text-body-mono text-white">REF_99827-CX</span>
+</div>
+<div class="bg-surface p-4 flex flex-col">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase mb-1">GENCOD</span>
+<span class="font-body-mono text-body-mono text-white">613000998271</span>
+</div>
+</div>
+<button class="w-full bg-primary-container text-on-primary-container py-6 font-label-caps text-label-caps font-black uppercase hover:bg-white hover:text-black transition-colors">
+    ADD_TO_MANIFEST
+  </button>
+</section></main>
+<!-- BottomNavBar -->
+</body></html>

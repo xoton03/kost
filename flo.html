@@ -1,21 +1,138 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html class="dark" lang="fr">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>K.O.S.T. - Flo Stock</title>
+    <title>Flo - Terminal de Recherche de Prix</title>
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="apple-touch-icon" href="assets/favicon.png">
     <link rel="manifest" href="manifest.json">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Grotesk:wght@500;600;700;800&display=swap"
-        rel="stylesheet">
+    <!-- Fonts pairing matching Stitch Mockup -->
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind & Custom theme from Stitch project "KOST Flo prix" -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-fixed-dim": "#c6c6c7",
+                      "tertiary-fixed-dim": "#c7c6c6",
+                      "tertiary-fixed": "#e3e2e2",
+                      "outline-variant": "#594136",
+                      "surface-variant": "#41312a",
+                      "surface-container-low": "#261812",
+                      "primary": "#ffb692",
+                      "secondary-fixed": "#e2e2e2",
+                      "surface-container-highest": "#41312a",
+                      "secondary": "#c6c6c7",
+                      "on-primary": "#562000",
+                      "surface-tint": "#ffb692",
+                      "inverse-surface": "#f7ddd2",
+                      "primary-container": "#ff6d00",
+                      "surface-container-high": "#362720",
+                      "on-error-container": "#ffdad6",
+                      "background": "#0A0A0A",
+                      "surface-bright": "#46362e",
+                      "on-background": "#f7ddd2",
+                      "on-secondary-fixed-variant": "#454747",
+                      "on-primary-container": "#582100",
+                      "outline": "#333333",
+                      "on-tertiary": "#2f3131",
+                      "error-container": "#93000a",
+                      "surface-dim": "#1d100a",
+                      "tertiary": "#c7c6c6",
+                      "on-primary-fixed": "#341100",
+                      "on-secondary-container": "#b4b5b5",
+                      "on-tertiary-fixed-variant": "#464747",
+                      "primary-fixed-dim": "#ffb692",
+                      "inverse-primary": "#9f4200",
+                      "on-tertiary-container": "#313232",
+                      "surface": "#1A1A1A",
+                      "on-primary-fixed-variant": "#7a3000",
+                      "on-surface": "#f7ddd2",
+                      "on-secondary": "#2f3131",
+                      "error": "#ffb4ab",
+                      "surface-container-lowest": "#170b06",
+                      "on-error": "#690005",
+                      "secondary-container": "#454747",
+                      "primary-fixed": "#ffdbcb",
+                      "tertiary-container": "#9a9a9a",
+                      "on-tertiary-fixed": "#1a1c1c",
+                      "on-surface-variant": "#e2bfb0",
+                      "inverse-on-surface": "#3d2d26",
+                      "surface-container": "#2a1c16",
+                      "on-secondary-fixed": "#1a1c1c"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0px",
+                      "lg": "0px",
+                      "xl": "0px",
+                      "full": "0px"
+              },
+              "spacing": {
+                      "margin-desktop": "32px",
+                      "margin-mobile": "16px",
+                      "unit": "4px",
+                      "sidebar-width": "240px",
+                      "gutter": "16px"
+              },
+              "fontFamily": {
+                      "body-main": ["Inter"],
+                      "body-mono": ["JetBrains Mono"],
+                      "headline-md-mobile": ["Space Grotesk"],
+                      "label-caps": ["Space Grotesk"],
+                      "headline-md": ["Space Grotesk"],
+                      "display-lg": ["Space Grotesk"]
+              },
+              "fontSize": {
+                      "body-main": ["14px", {"lineHeight": "1.5", "letterSpacing": "0em", "fontWeight": "400"}],
+                      "body-mono": ["13px", {"lineHeight": "1.4", "letterSpacing": "-0.02em", "fontWeight": "400"}],
+                      "headline-md-mobile": ["20px", {"lineHeight": "1.2", "letterSpacing": "0.08em", "fontWeight": "600"}],
+                      "label-caps": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.15em", "fontWeight": "500"}],
+                      "headline-md": ["24px", {"lineHeight": "1.2", "letterSpacing": "0.08em", "fontWeight": "600"}],
+                      "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "0.05em", "fontWeight": "700"}]
+              }
+            },
+          },
+        }
+    </script>
+
+    <!-- Custom CSS styles matching the Obsidian Pulse look -->
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #0A0A0A;
+            color: #FFFFFF;
+            min-height: 100dvh;
+        }
+        /* Custom scrollbar matching brutalist aesthetics */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #333333 transparent;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333333;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ff6d00;
+        }
+    </style>
+
     <script src="lucide.js" defer></script>
     <script src="dexie.js" defer></script>
     <script src="database.js" defer></script>
@@ -23,198 +140,49 @@
     <script src="flo.js" defer></script>
     <script src="navigation.js" defer></script>
     <link rel="stylesheet" href="styles.css">
-
-    <style>
-        /* Mobile-first card grid */
-        @media (max-width: 768px) {
-            .results-table {
-                display: none;
-            }
-
-            .results-grid {
-                display: grid;
-                grid-template-columns: 1fr;
-                gap: 1rem;
-                padding: 1rem;
-            }
-
-            .scan-btn {
-                display: flex !important;
-            }
-        }
-
-        @media (min-width: 769px) {
-            .results-grid {
-                display: none;
-            }
-
-            .scan-btn {
-                display: none !important;
-            }
-        }
-
-        .stock-card {
-            background: var(--surface-charcoal);
-            border: 1px solid var(--border-dim);
-            padding: 1.25rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stock-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: var(--day-2);
-            /* Tuesday orange as accent for Flo */
-        }
-
-        .stock-card .price {
-            font-family: var(--font-headline);
-            font-size: 1.5rem;
-            font-weight: 900;
-            color: white;
-        }
-
-        .search-container {
-            position: relative;
-            width: 100%;
-        }
-
-        .search-container i {
-            position: absolute;
-            left: 1.25rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #475569;
-            z-index: 10;
-        }
-
-        .search-container input {
-            padding-left: 3.5rem !important;
-            width: 100%;
-            border-radius: 4px !important;
-        }
-
-        .btn-sync {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-dim);
-            color: #94A3B8;
-            padding: 0.5rem 1rem;
-            font-family: var(--font-headline);
-            font-size: 0.7rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.2s;
-        }
-
-        .btn-sync:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            border-color: var(--day-2);
-        }
-    </style>
 </head>
 
-<body class="bg-[#0A0A0A] text-slate-300">
+<body class="font-body-main bg-background text-white selection:bg-primary-container selection:text-white">
 
-    <header class="flex items-center justify-between px-4 sm:px-6 bg-[#171717] border-b border-white/5">
+    <!-- TopAppBar -->
+    <header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-margin-mobile h-16 bg-background border-b border-outline">
         <div class="flex items-center gap-3">
             <!-- Hamburger button -->
             <button id="hamburger-trigger"
-                class="p-3 -ml-2 text-slate-400 hover:text-orange-400 transition-all active:scale-90"
+                class="p-3 -ml-2 text-slate-400 hover:text-primary transition-all active:scale-90"
                 title="Ouvrir le menu">
                 <i data-lucide="menu" class="w-6 h-6"></i>
             </button>
 
-            <div id="logo-trigger"
-                class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-all active:scale-95 select-none">
-                <img src="assets/logo.png" alt="K.O.S.T Logo"
-                    class="w-9 h-9 rounded-md object-cover shadow-[0_0_15px_rgba(249,115,22,0.3)] shrink-0 border border-orange-500/30">
-                <div class="flex items-baseline gap-2">
-                    <h1 class="text-white font-extrabold text-xl tracking-tighter">
-                        <span class="text-orange-500">F</span>LO
-                    </h1>
-                    <span class="text-[10px] font-black bg-blue-600 text-white px-1.5 py-0.5 rounded-sm shadow-[0_0_10px_rgba(37,99,235,0.4)]">V6.7.1</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Center Clock: Modern HUD Interface -->
-        <div id="clock-container">
-            <button id="btn-sync-database" class="flex-1 flex items-center justify-center gap-2 bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 border border-orange-600/30 py-4 font-black uppercase tracking-widest transition-all">
-                <i data-lucide="download-cloud" class="w-5 h-5"></i>
-                <span class="text-xs">Télécharger les données</span>
-            </button>
-        </div>
-
-        <!-- Sync Progress (Hidden by default) -->
-        <div id="sync-progress-container" class="hidden flex-col gap-2 p-4 bg-orange-600/5 border border-orange-600/20 mb-8">
-            <div class="flex justify-between items-center text-[10px] font-bold text-orange-500 uppercase tracking-widest">
-                <span id="sync-status">Synchronisation...</span>
-                <span id="sync-count">0 / 0</span>
-            </div>
-            <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-white/5">
-                <div id="sync-bar" class="h-full bg-orange-500 transition-all duration-300" style="width: 0%"></div>
+            <div id="logo-trigger" class="flex items-center gap-3 cursor-pointer select-none">
+                <h1 class="font-headline-md-mobile text-headline-md-mobile font-bold tracking-widest text-primary uppercase">FLO_CMD</h1>
             </div>
         </div>
     </header>
 
-    <main class="flex flex-col h-full overflow-hidden">
-        <!-- Search Bar Section -->
-        <div class="p-4 sm:p-6 bg-[#171717]/50 border-b border-white/5">
-            <div class="max-w-4xl mx-auto flex gap-3">
-                <div class="search-container flex-1">
-                    <i data-lucide="search" class="w-5 h-5"></i>
-                    <input type="text" id="search-input" placeholder="RECHERCHER GENCOD OU RÉFÉRENCE..."
-                        autocomplete="off">
-                </div>
-                <button id="btn-scan"
-                    class="scan-btn bg-orange-600 hover:bg-orange-700 text-white p-4 rounded-none transition-colors items-center justify-center hidden">
+    <!-- Main Content -->
+    <main class="pt-24 pb-24 px-margin-mobile max-w-4xl mx-auto flex flex-col gap-6 w-full">
+        <!-- Search input section -->
+        <section class="flex flex-col gap-2 mb-2">
+            <label class="font-label-caps text-label-caps text-primary uppercase ml-1">SEARCH_CMD</label>
+            <div class="border border-outline bg-surface p-4 flex items-center justify-between gap-3">
+                <input id="search-input" class="bg-transparent border-none focus:ring-0 p-0 text-body-main font-body-mono placeholder:opacity-30 uppercase w-full text-white focus:outline-none" placeholder="ENTER_PRODUCT_ID" type="text" autocomplete="off"/>
+                <button id="btn-scan" class="text-primary hover:text-white transition-colors shrink-0">
                     <i data-lucide="camera" class="w-6 h-6"></i>
                 </button>
             </div>
+        </section>
+
+        <!-- Results Grid: Single dynamic card layout for all widths -->
+        <div id="results-body-mobile" class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+            <!-- Dynamically populated brutalist cards -->
         </div>
 
-        <!-- Results Section -->
-        <div class="flex-1 overflow-auto bg-[#0A0A0A]">
-
-            <!-- Desktop Table -->
-            <div class="results-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th class="w-48">GENCOD</th>
-                            <th class="w-32">RÉFÉRENCE</th>
-                            <th>LIBELLÉ ARTICLE</th>
-                            <th class="w-32 text-right">PRIX</th>
-                        </tr>
-                    </thead>
-                    <tbody id="results-body-desktop">
-                        <!-- Les résultats s'afficheront ici après une recherche -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Mobile Grid -->
-            <div class="results-grid" id="results-body-mobile">
-                <!-- Les résultats s'afficheront ici après une recherche -->
-            </div>
-
-        </div>
+        <!-- Hidden desktop container for backward compatibility with older scripts if needed -->
+        <div id="results-body-desktop" class="hidden"></div>
     </main>
 
-    <!-- Navigation Drawer -->
+    <!-- Navigation Drawer (Retained identically) -->
     <div id="nav-backdrop"
         class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] hidden opacity-0 transition-opacity duration-300">
     </div>
@@ -231,8 +199,7 @@
         </div>
 
         <nav class="p-4 space-y-2">
-            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] px-3 mb-4">Modules Disponibles
-            </div>
+            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] px-3 mb-4">Modules Disponibles</div>
 
             <a href="index.html"
                 class="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/10 text-slate-400 group transition-all">
@@ -277,8 +244,7 @@
                     <span class="text-[9px] text-orange-400 font-bold uppercase tracking-wider">Module Actif</span>
                 </div>
             </a>
-            </a>
-            
+
             <a href="explorer.html"
                 class="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/10 text-slate-400 group transition-all">
                 <div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center group-hover:bg-orange-500/20">
@@ -326,9 +292,7 @@
         </div>
     </aside>
 
-    <div id="toast-container"></div>
-
-
+    <div id="toast-container" class="fixed bottom-4 right-4 z-[250] flex flex-col gap-2"></div>
 
     <script src="lucide.js" defer></script>
     <script src="dexie.js" defer></script>
