@@ -668,6 +668,25 @@ async function startScanner() {
         );
         
         if (statusEl) statusEl.textContent = 'ACTIVE_READY';
+
+        // Apply a slight zoom if supported by the camera (typically 1.5x - 2.0x is great for barcodes)
+        try {
+            const capabilities = html5QrCode.getRunningTrackCapabilities();
+            if (capabilities && capabilities.zoom) {
+                const minZoom = capabilities.zoom.min || 1;
+                const maxZoom = capabilities.zoom.max || 1;
+                // Target a slight zoom (e.g., 2.0x zoom)
+                const targetZoom = Math.min(Math.max(minZoom, 2.0), maxZoom);
+                console.log(`[Flo Scanner] Camera supports zoom (min: ${minZoom}, max: ${maxZoom}). Applying: ${targetZoom}`);
+                await html5QrCode.applyVideoConstraints({
+                    advanced: [{ zoom: targetZoom }]
+                });
+            } else {
+                console.log('[Flo Scanner] Zoom capability not supported by this camera/browser.');
+            }
+        } catch (zoomErr) {
+            console.warn('[Flo Scanner] Failed to apply zoom constraints:', zoomErr);
+        }
         
     } catch (err) {
         console.error('[Flo Scanner] Error initiating scanner:', err);
