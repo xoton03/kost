@@ -1,8 +1,9 @@
-const CACHE_NAME = 'kost-v6.7';
+const CACHE_NAME = 'kost-v8.0';
 const urlsToCache = [
   './',
   './index.html',
   './tictache.html',
+  './ticticket.html',
   './station.html',
   './flo.html',
   './technical_fiche.html',

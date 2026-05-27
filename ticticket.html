@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K.O.S.T. - Tic Ticket</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Grotesk:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="lucide.js" defer></script>
+    <script src="dexie.js" defer></script>
+    <script src="database.js" defer></script>
+    <script src="sync.js" defer></script>
+    <script src="navigation.js" defer></script>
+    <script src="jsbarcode.js" defer></script>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* ===== TIC TICKET SPECIFIC STYLES ===== */
+        .tt-card {
+            background: #171717;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .tt-input {
+            width: 100%;
+            background: #000;
+            border: 1px solid #333;
+            color: #fff;
+            padding: 0.875rem 1rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .tt-input:focus { border-color: #F43F5E; }
+        .tt-input::placeholder { color: #444; font-weight: 500; text-transform: none; letter-spacing: 0; }
+        
+        .tt-label {
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: #64748b;
+            font-family: 'Space Grotesk', sans-serif;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        .tt-btn-print {
+            width: 100%;
+            background: #F43F5E;
+            color: #fff;
+            border: none;
+            padding: 1rem 2rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 900;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            min-height: 56px;
+        }
+        .tt-btn-print:hover { background: #e11d48; transform: translateY(-1px); }
+        .tt-btn-print:active { transform: scale(0.98); }
+        .tt-btn-print:disabled { background: #374151; color: #6b7280; cursor: not-allowed; transform: none; }
+        
+        /* 35x35mm Label Preview */
+        #label-preview-container {
+            background: #111;
+            padding: 2rem;
+            border: 1px solid #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 320px;
+            aspect-ratio: 1/1;
+        }
+        
+        .promo-preview-label {
+            width: 200px;
+            height: 200px;
+            background: #ffffff;
+            color: #000000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            box-sizing: border-box;
+            border-radius: 4px;
+            font-family: 'Space Grotesk', sans-serif;
+            position: relative;
+            user-select: none;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.1);
+        }
+        
+        .preview-old-price {
+            font-size: 1.1rem;
+            font-weight: 500;
+            text-decoration: line-through;
+            color: #555;
+            margin-bottom: 4px;
+        }
+        
+        .preview-discount {
+            font-size: 1.4rem;
+            font-weight: 900;
+            background: #000;
+            color: #fff;
+            padding: 2px 14px;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        
+        .preview-new-price {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #000;
+            margin-bottom: 4px;
+            line-height: 1.1;
+        }
+        
+        .preview-ref {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #333;
+            letter-spacing: 0.05em;
+        }
+
+        /* ===== PRINT STYLES: 35mm x 35mm thermal label ===== */
+        @media print {
+            @page {
+                size: 35mm 35mm;
+                margin: 0;
+            }
+            html, body { margin: 0; padding: 0; background: #fff !important; width: 35mm; height: 35mm; }
+            body > *:not(#print-zone) { display: none !important; }
+            #print-zone {
+                display: block !important;
+                position: fixed;
+                top: 0; left: 0;
+                width: 35mm;
+                height: 35mm;
+            }
+            .print-label {
+                width: 35mm;
+                height: 35mm;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 1mm;
+                box-sizing: border-box;
+                page-break-after: always;
+                overflow: hidden;
+                background: #fff !important;
+                color: #000 !important;
+            }
+            .promo-old-price {
+                font-family: 'Space Grotesk', sans-serif;
+                font-size: 8pt;
+                text-decoration: line-through;
+                color: #555;
+                font-weight: 500;
+                margin-bottom: 0.5mm;
+            }
+            .promo-discount {
+                font-family: 'Space Grotesk', sans-serif;
+                font-size: 10pt;
+                font-weight: 900;
+                background: #000 !important;
+                color: #fff !important;
+                padding: 0.2mm 2mm;
+                border-radius: 2px;
+                margin-bottom: 0.5mm;
+                text-transform: uppercase;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .promo-new-price {
+                font-family: 'Space Grotesk', sans-serif;
+                font-size: 13pt;
+                font-weight: 900;
+                color: #000;
+                margin-bottom: 0.5mm;
+            }
+            .promo-ref {
+                font-family: 'Space Grotesk', sans-serif;
+                font-size: 6pt;
+                font-weight: 700;
+                text-transform: uppercase;
+                color: #333;
+                letter-spacing: 0.05em;
+            }
+        }
+        
+        .tt-main-container {
+            display: flex;
+            height: calc(100vh - 72px);
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .tt-search-section {
+            width: 380px;
+            min-width: 320px;
+            flex-shrink: 0;
+            border-right: 1px solid #1e293b;
+            background: #0f0f0f;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 1.5rem;
+            gap: 1.25rem;
+            z-index: 10;
+        }
+
+        .tt-barcode-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            gap: 1.5rem;
+            overflow-y: auto;
+            background: #000;
+        }
+
+        @media (max-width: 800px) {
+            .tt-main-container {
+                flex-direction: column;
+                height: auto;
+                overflow-y: auto;
+                display: block;
+            }
+            .tt-search-section {
+                width: 100%;
+                min-width: 0;
+                border-right: none;
+                border-bottom: 1px solid #1e293b;
+                overflow-y: visible;
+                padding: 1.25rem;
+                gap: 1rem;
+                height: auto;
+            }
+            .tt-barcode-section {
+                width: 100%;
+                padding: 1.5rem 1.25rem 3rem;
+                justify-content: flex-start;
+                min-height: auto;
+                overflow-y: visible;
+                height: auto;
+            }
+            #label-preview-container {
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body class="bg-black text-slate-300">
+
+    <!-- Header -->
+    <header class="flex items-center justify-between px-4 sm:px-6 bg-slate-900 border-b border-white/5 sticky top-0 z-[100] h-[55px] sm:h-[60px]">
+        <div class="flex items-center gap-3">
+            <!-- Hamburger button -->
+            <button id="hamburger-trigger" class="p-2 -ml-2 text-slate-400 hover:text-rose-400 transition-all active:scale-90" title="Ouvrir le menu">
+                <i data-lucide="menu" class="w-6 h-6"></i>
+            </button>
+
+            <!-- Logo trigger -->
+            <div id="logo-trigger" class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-all active:scale-95 select-none" title="Ouvrir le menu">
+                <img src="assets/logo.png" alt="Logo K.O.S.T." class="w-9 h-9 rounded-md object-cover shadow-[0_0_15px_rgba(244,63,94,0.3)] shrink-0 border border-[#F43F5E]/30">
+                <div class="flex flex-col leading-tight">
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-white font-extrabold text-sm sm:text-base tracking-tighter uppercase">
+                            K.O.S.T. — <span class="text-rose-400">Soldes</span>
+                        </h1>
+                        <span class="text-[9px] font-black bg-blue-600 text-white px-1.2 py-0.2 rounded-sm shadow-[0_0_8px_rgba(37,99,235,0.4)]">V8</span>
+                    </div>
+                    <p class="text-[8px] sm:text-[9px] text-slate-500 font-bold uppercase tracking-[0.2em]">Promotion Print Terminal</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Clock: Modern HUD Interface -->
+        <div id="clock-container">
+            <div class="time-block">
+                <span id="current-time">00:00</span>
+                <span id="current-seconds">00</span>
+            </div>
+            <div class="clock-divider"></div>
+            <div id="current-date">-- --- ----</div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="px-2 py-1 rounded border border-rose-400/30 bg-rose-400/10 text-[9px] font-bold text-rose-400 uppercase tracking-widest">
+                Soldes & Remises
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Layout -->
+    <main class="tt-main-container">
+        <!-- LEFT: Input Form -->
+        <div class="tt-search-section">
+            <div>
+                <h2 class="text-xs font-black bg-gradient-to-r from-rose-400 to-red-500 bg-clip-text text-transparent border-l-4 border-rose-400 pl-3 py-1">TICKETAGE AVEC TICKET</h2>
+                <p style="font-size:0.65rem; color:#475569; margin-top:0.4rem; padding-left:0.75rem;">Saisissez les informations de prix et référence.</p>
+            </div>
+
+            <!-- Form -->
+            <form id="promo-form" class="space-y-4" onsubmit="event.preventDefault();">
+                <!-- Prix sans solde (Ancien) -->
+                <div class="space-y-2">
+                    <label for="old-price" class="tt-label">Prix sans solde (Ancien prix)</label>
+                    <input type="text" id="old-price" class="tt-input" placeholder="ex: 49.99" autocomplete="off" inputmode="decimal">
+                </div>
+
+                <!-- Nouveau prix (Prix avec solde) -->
+                <div class="space-y-2">
+                    <label for="new-price" class="tt-label">Prix avec solde (Nouveau prix)</label>
+                    <input type="text" id="new-price" class="tt-input" placeholder="ex: 34.99" autocomplete="off" inputmode="decimal">
+                </div>
+
+                <!-- Pourcentage de remise (calculé) -->
+                <div class="space-y-2">
+                    <label for="discount-pct" class="tt-label">Remise calculée</label>
+                    <input type="text" id="discount-pct" class="tt-input bg-[#0d0d0d] border-red-900/20 text-rose-400 font-extrabold cursor-not-allowed select-none" readonly placeholder="--- %">
+                </div>
+
+                <!-- Référence -->
+                <div class="space-y-2">
+                    <label for="ref-code" class="tt-label">Référence</label>
+                    <input type="text" id="ref-code" class="tt-input" placeholder="ex: REF-12345" autocomplete="off">
+                </div>
+            </form>
+        </div>
+
+        <!-- RIGHT: Preview & Print Actions -->
+        <div class="tt-barcode-section">
+            <!-- Label Preview Area -->
+            <div class="flex flex-col items-center gap-2">
+                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Aperçu de l'étiquette (35 x 35 mm)</span>
+                <div id="label-preview-container">
+                    <div class="promo-preview-label" id="promo-preview-label">
+                        <div class="preview-old-price" id="preview-old-price">--.-- €</div>
+                        <div class="preview-discount" id="preview-discount">-%</div>
+                        <div class="preview-new-price" id="preview-new-price">--.-- €</div>
+                        <div class="preview-ref" id="preview-ref">REF-EXEMPLE</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Print controls and actions -->
+            <div style="width:100%; max-width:320px; display:flex; flex-direction:column; gap:0.75rem;">
+                
+                <!-- Copies selector -->
+                <div class="space-y-2">
+                    <label class="tt-label">Nombre de copies</label>
+                    <div style="display:flex; align-items:center; gap:0; border:1px solid #333;">
+                        <button id="btn-qty-minus" style="width:48px; height:48px; background:#1a1a1a; color:#fff; border:none; font-size:1.4rem; font-weight:900; cursor:pointer; flex-shrink:0; transition:background 0.15s;" onmouseover="this.style.background='#F43F5E20'" onmouseout="this.style.background='#1a1a1a'">−</button>
+                        <input type="number" id="tt-quantity" class="tt-input" value="1" min="1" max="100" style="text-align:center; font-size:1.4rem; font-weight:900; border:none; border-left:1px solid #333; border-right:1px solid #333; flex:1; height:48px; padding:0;">
+                        <button id="btn-qty-plus" style="width:48px; height:48px; background:#1a1a1a; color:#fff; border:none; font-size:1.4rem; font-weight:900; cursor:pointer; flex-shrink:0; transition:background 0.15s;" onmouseover="this.style.background='#F43F5E20'" onmouseout="this.style.background='#1a1a1a'">+</button>
+                    </div>
+                </div>
+
+                <!-- Local Print -->
+                <button id="btn-print" class="tt-btn-print" style="background:#1e293b; color:#94a3b8; font-size:0.7rem; border: 1px solid #334155;">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    Imprimer localement
+                </button>
+
+                <!-- Remote Print -->
+                <button id="btn-remote-print" class="tt-btn-print">
+                    <i data-lucide="send" class="w-5 h-5"></i>
+                    Lancer l'impression à distance
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Print Zone (only visible during print) -->
+    <div id="print-zone"></div>
+
+    <div id="toast-container" class="fixed bottom-4 right-4 z-[250] flex flex-col gap-2"></div>
+
+    <!-- Script Logic -->
+    <script>
+        // Supabase configuration
+        window.SUPABASE_URL = window.SUPABASE_URL || "https://jphzmgscxpejcyjlnspq.supabase.co";
+        window.SUPABASE_KEY = window.SUPABASE_KEY || "sb_publishable_gshF6Y08DYJYO9c8Z_Cv2Q_9nEZr7J9";
+
+        // DOM elements
+        const oldPriceInput = document.getElementById('old-price');
+        const newPriceInput = document.getElementById('new-price');
+        const discountInput = document.getElementById('discount-pct');
+        const refInput = document.getElementById('ref-code');
+        const qtyInput = document.getElementById('tt-quantity');
+        
+        // Preview elements
+        const previewOldPrice = document.getElementById('preview-old-price');
+        const previewDiscount = document.getElementById('preview-discount');
+        const previewNewPrice = document.getElementById('preview-new-price');
+        const previewRef = document.getElementById('preview-ref');
+
+        // Toast Helper
+        function showToast(msg, type = 'info') {
+            const c = document.getElementById('toast-container');
+            const t = document.createElement('div');
+            const color = type === 'success' ? '#22C55E' : type === 'error' ? '#EF4444' : '#F43F5E';
+            t.className = 'toast';
+            t.style.borderLeftColor = color;
+            t.innerHTML = `<span style="color:${color};font-size:1.2rem;">●</span><span style="flex:1;font-size:0.8rem;font-weight:700;">${msg}</span>`;
+            c.appendChild(t);
+            setTimeout(() => t.remove(), 4000);
+        }
+
+        // Format price helper
+        function formatPrice(val) {
+            if (!val || isNaN(val)) return '--.-- €';
+            let s = parseFloat(val).toFixed(2);
+            return s + ' €';
+        }
+
+        // Calculate and update fields
+        function updateLogic() {
+            // Clean inputs (replace comma with dot for decimal parse)
+            let oldRaw = oldPriceInput.value.replace(',', '.');
+            let newRaw = newPriceInput.value.replace(',', '.');
+            
+            let oldPrice = parseFloat(oldRaw);
+            let newPrice = parseFloat(newRaw);
+            let refText = refInput.value.trim().toUpperCase();
+
+            // 1. Calculate discount
+            if (!isNaN(oldPrice) && oldPrice > 0 && !isNaN(newPrice) && newPrice >= 0) {
+                const pct = Math.round(((oldPrice - newPrice) / oldPrice) * 100);
+                discountInput.value = `-${pct}%`;
+                previewDiscount.textContent = `-${pct}%`;
+                previewDiscount.style.display = 'block';
+            } else {
+                discountInput.value = '';
+                previewDiscount.textContent = '-%';
+            }
+
+            // 2. Update preview
+            previewOldPrice.textContent = !isNaN(oldPrice) ? formatPrice(oldPrice) : '--.-- €';
+            previewNewPrice.textContent = !isNaN(newPrice) ? formatPrice(newPrice) : '--.-- €';
+            previewRef.textContent = refText ? refText : 'REF-EXEMPLE';
+        }
+
+        // Event listeners for real-time updates
+        oldPriceInput.addEventListener('input', updateLogic);
+        newPriceInput.addEventListener('input', updateLogic);
+        refInput.addEventListener('input', updateLogic);
+
+        // Quantity +/- Buttons
+        document.getElementById('btn-qty-minus').addEventListener('click', () => {
+            const val = parseInt(qtyInput.value) || 1;
+            if (val > 1) qtyInput.value = val - 1;
+        });
+        document.getElementById('btn-qty-plus').addEventListener('click', () => {
+            const val = parseInt(qtyInput.value) || 1;
+            if (val < 100) qtyInput.value = val + 1;
+        });
+
+        // LOCAL PRINT
+        document.getElementById('btn-print').addEventListener('click', () => {
+            let oldRaw = oldPriceInput.value.replace(',', '.');
+            let newRaw = newPriceInput.value.replace(',', '.');
+            let oldPrice = parseFloat(oldRaw);
+            let newPrice = parseFloat(newRaw);
+            let refText = refInput.value.trim().toUpperCase();
+            
+            if (isNaN(oldPrice) || isNaN(newPrice) || !refText) {
+                showToast('Veuillez remplir tous les champs avant d\'imprimer', 'error');
+                return;
+            }
+
+            const discountText = discountInput.value;
+            const qty = parseInt(qtyInput.value) || 1;
+            
+            const printZone = document.getElementById('print-zone');
+            printZone.innerHTML = '';
+
+            for (let i = 0; i < qty; i++) {
+                const label = document.createElement('div');
+                label.className = 'print-label';
+                
+                const oldPriceEl = document.createElement('div');
+                oldPriceEl.className = 'promo-old-price';
+                oldPriceEl.textContent = formatPrice(oldPrice);
+                
+                const discountEl = document.createElement('div');
+                discountEl.className = 'promo-discount';
+                discountEl.textContent = discountText;
+                
+                const newPriceEl = document.createElement('div');
+                newPriceEl.className = 'promo-new-price';
+                newPriceEl.textContent = formatPrice(newPrice);
+                
+                const refEl = document.createElement('div');
+                refEl.className = 'promo-ref';
+                refEl.textContent = refText;
+                
+                label.appendChild(oldPriceEl);
+                label.appendChild(discountEl);
+                label.appendChild(newPriceEl);
+                label.appendChild(refEl);
+                
+                printZone.appendChild(label);
+            }
+
+            window.print();
+        });
+
+        // REMOTE PRINT
+        document.getElementById('btn-remote-print').addEventListener('click', async () => {
+            let oldRaw = oldPriceInput.value.replace(',', '.');
+            let newRaw = newPriceInput.value.replace(',', '.');
+            let oldPrice = parseFloat(oldRaw);
+            let newPrice = parseFloat(newRaw);
+            let refText = refInput.value.trim().toUpperCase();
+            
+            if (isNaN(oldPrice) || isNaN(newPrice) || !refText) {
+                showToast('Veuillez remplir tous les champs avant d\'envoyer', 'error');
+                return;
+            }
+
+            const discountText = discountInput.value;
+            const qty = parseInt(qtyInput.value) || 1;
+            const btn = document.getElementById('btn-remote-print');
+
+            // Visual feedback loading
+            btn.disabled = true;
+            btn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> ENVOI EN COURS...';
+            if (window.lucide) lucide.createIcons();
+
+            const promoPayload = {
+                type: "promo",
+                old_price: oldPrice.toString(),
+                new_price: newPrice.toString(),
+                discount: discountText,
+                reference: refText
+            };
+
+            try {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/print_queue`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({
+                        barcode: 'TICKET_PROMO',
+                        details: JSON.stringify(promoPayload),
+                        quantity: qty,
+                        status: 'pending'
+                    })
+                });
+
+                if (!res.ok) throw new Error(`Supabase response error: ${res.status}`);
+
+                showToast(`⚡ Ordre de solde envoyé ! (${qty} copie${qty > 1 ? 's' : ''})`, 'success');
+                
+                // Optional: Clear form or keep it for ease of successive prints
+            } catch (err) {
+                console.error('Remote print error:', err);
+                showToast('Erreur d\'envoi à la station d\'impression', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> LANCER L\'IMPRESSION À DISTANCE';
+                if (window.lucide) lucide.createIcons();
+            }
+        });
+    </script>
+    
+    <script src="updater.js" defer></script>
+    
+    <!-- Navigation Drawer -->
+    <div id="nav-backdrop" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] hidden opacity-0 transition-opacity duration-300"></div>
+    <aside id="nav-drawer" class="fixed top-0 left-0 h-full w-72 bg-[#0f172a] border-r border-white/10 z-[200] -translate-x-full transition-transform duration-300 ease-out shadow-2xl">
+        <div class="p-6 border-b border-white/5 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <img src="assets/logo.png" alt="Logo" class="w-8 h-8 rounded">
+                <span class="text-white font-black tracking-tighter">MENU PRINCIPAL</span>
+            </div>
+            <button id="btn-close-drawer" class="text-slate-500 hover:text-white transition-colors">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <nav class="p-4 space-y-2">
+            <div class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] px-3 mb-4">Modules Disponibles</div>
+            
+            <a href="index.html" class="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/10 text-slate-400 group transition-all">
+                <div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center group-hover:bg-[#22C55E]/20">
+                    <i data-lucide="scan-barcode" class="w-4 h-4 text-slate-400 group-hover:text-[#22C55E]"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-sm font-bold leading-tight group-hover:text-white">Checkage sans ticket</span>
+                    <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Inventaire</span>
+                </div>
+            </a>
+
+            <a href="tictache.html" class="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/10 text-slate-400 group transition-all">
+                <div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center group-hover:bg-yellow-400/20">
+                    <i data-lucide="tag" class="w-4 h-4 text-slate-400 group-hover:text-yellow-400"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-sm font-bold leading-tight group-hover:text-white">Ticketage sans ticket</span>
+                    <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Impression Mobile</span>
+                </div>
+            </a>
+
+            <a href="ticticket.html" class="flex items-center gap-4 px-4 py-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-white group transition-all">
+                <div class="w-8 h-8 rounded bg-rose-500/20 flex items-center justify-center">
+                    <i data-lucide="ticket" class="w-4 h-4 text-rose-500"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-sm font-bold leading-tight">Ticketage avec ticket</span>
+                    <span class="text-[9px] text-rose-500 font-bold uppercase tracking-wider">Module Actif</span>
+                </div>
+            </a>
+
+            <a href="station.html" class="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/10 text-slate-400 group transition-all">
+                <div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center group-hover:bg-cyan-500/20">
+                    <i data-lucide="monitor" class="w-4 h-4 text-slate-400 group-hover:text-cyan-400"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-sm font-bold leading-tight group-hover:text-white">Station d'Impression</span>
+                    <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">PC Bureau</span>
+                </div>
+            </a>
+
+            <a href="flo.html" class="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/10 text-slate-400 group transition-all">
+                <div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center group-hover:bg-orange-500/20">
+                    <i data-lucide="trending-up" class="w-4 h-4 text-slate-400 group-hover:text-orange-400"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-sm font-bold leading-tight group-hover:text-white">Flo</span>
+                    <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Stock & Prix</span>
+                </div>
+            </a>
+
+            <a href="explorer.html" class="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/10 text-slate-400 group transition-all">
+                <div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center group-hover:bg-cyan-400/20">
+                    <i data-lucide="database" class="w-4 h-4 text-slate-400 group-hover:text-cyan-400"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-sm font-bold leading-tight group-hover:text-white">DB Explorer</span>
+                    <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Visualiseur de Données</span>
+                </div>
+            </a>
+        </nav>
+
+        <div class="absolute bottom-0 left-0 w-full p-6 border-t border-white/5 space-y-4">
+            <div class="space-y-3">
+                <button id="btn-sync-database" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded border border-white/5 text-[9px] font-bold uppercase flex items-center justify-center gap-2 transition-all">
+                    <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                    Nouvelle Sync (Clear)
+                </button>
+                <button id="btn-resume-database" class="w-full bg-orange-600/20 hover:bg-orange-600/40 text-orange-400 px-4 py-3 rounded border border-orange-600/30 text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all">
+                    <i data-lucide="play" class="w-4 h-4"></i>
+                    Reprendre la Sync
+                </button>
+                <div id="sync-progress-container" class="hidden space-y-2 bg-black/20 p-3 rounded border border-white/5">
+                    <div class="flex justify-between text-[9px] font-bold text-orange-500 uppercase tracking-widest">
+                        <span id="sync-status">Synchro...</span>
+                        <span id="sync-count">0 / 0</span>
+                    </div>
+                    <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-white/5">
+                        <div id="sync-bar" class="h-full bg-orange-500 transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div id="sync-info" class="text-[8px] text-slate-500 font-bold uppercase tracking-widest text-center">
+                    Base Locale : <span id="local-db-status" class="text-slate-400">Non chargée</span>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3 text-slate-500">
+                <i data-lucide="settings" class="w-4 h-4"></i>
+                <span class="text-xs font-bold uppercase tracking-widest">Paramètres</span>
+            </div>
+        </div>
+    </aside>
+</body>
+</html>

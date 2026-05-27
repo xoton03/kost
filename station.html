@@ -288,6 +288,55 @@
                 margin: 0; padding: 0;
                 color: #000;
             }
+            /* Promo Label Print Styles */
+            .promo-label {
+                width: 35mm !important;
+                height: 35mm !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
+                padding: 1.5mm !important;
+                box-sizing: border-box !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+            }
+            .promo-old-price {
+                font-family: 'Space Grotesk', sans-serif !important;
+                font-size: 8pt !important;
+                text-decoration: line-through !important;
+                color: #555 !important;
+                font-weight: 500 !important;
+                margin-bottom: 0.5mm !important;
+            }
+            .promo-discount {
+                font-family: 'Space Grotesk', sans-serif !important;
+                font-size: 10pt !important;
+                font-weight: 900 !important;
+                background: #000000 !important;
+                color: #ffffff !important;
+                padding: 0.2mm 2mm !important;
+                border-radius: 2px !important;
+                margin-bottom: 0.5mm !important;
+                text-transform: uppercase !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .promo-new-price {
+                font-family: 'Space Grotesk', sans-serif !important;
+                font-size: 13pt !important;
+                font-weight: 900 !important;
+                color: #000000 !important;
+                margin-bottom: 0.5mm !important;
+            }
+            .promo-ref {
+                font-family: 'Space Grotesk', sans-serif !important;
+                font-size: 6pt !important;
+                font-weight: 700 !important;
+                text-transform: uppercase !important;
+                color: #333333 !important;
+                letter-spacing: 0.05em !important;
+            }
         }
     </style>
 </head>
@@ -444,6 +493,13 @@
     // ============================================================
     // PRINT EXECUTION
     // ============================================================
+    // Format price helper
+    function formatPrice(val) {
+        if (!val || isNaN(val)) return '--.-- €';
+        let s = parseFloat(val).toFixed(2);
+        return s + ' €';
+    }
+
     async function executePrintJob(job) {
         // 1. Claim the job (mark as 'printing') to prevent other stations from taking it
         try {
@@ -453,13 +509,32 @@
             // If we can't mark it, still try to print (best effort)
         }
 
+        // Detect if promo job
+        let isPromo = false;
+        let promoData = null;
+        if (job.barcode === 'TICKET_PROMO') {
+            isPromo = true;
+            try {
+                promoData = JSON.parse(job.details);
+            } catch(e) {
+                console.error('Failed to parse promo job details:', e);
+            }
+        }
+
         // 2. Show active job UI
         document.getElementById('idle-card').style.opacity = '0.3';
         const jobCard = document.getElementById('job-card');
         jobCard.classList.add('active');
-        document.getElementById('job-details').textContent = job.details;
-        document.getElementById('job-qty').textContent = `${job.quantity} étiquette${job.quantity > 1 ? 's' : ''}`;
-        document.getElementById('job-barcode').textContent = `Code-barres : ${job.barcode}`;
+        
+        if (isPromo && promoData) {
+            document.getElementById('job-details').textContent = `🏷️ Promo: ${promoData.reference} (${promoData.discount})`;
+            document.getElementById('job-qty').textContent = `${job.quantity} étiquette${job.quantity > 1 ? 's' : ''}`;
+            document.getElementById('job-barcode').textContent = `Ancien: ${formatPrice(promoData.old_price)} ➔ Nouveau: ${formatPrice(promoData.new_price)}`;
+        } else {
+            document.getElementById('job-details').textContent = job.details;
+            document.getElementById('job-qty').textContent = `${job.quantity} étiquette${job.quantity > 1 ? 's' : ''}`;
+            document.getElementById('job-barcode').textContent = `Code-barres : ${job.barcode}`;
+        }
 
         // 3. Build print zone
         const printZone = document.getElementById('print-zone');
@@ -467,32 +542,60 @@
 
         for (let i = 0; i < job.quantity; i++) {
             const label = document.createElement('div');
-            label.className = 'print-label';
+            
+            if (isPromo && promoData) {
+                label.className = 'print-label promo-label';
+                
+                const oldPriceEl = document.createElement('div');
+                oldPriceEl.className = 'promo-old-price';
+                oldPriceEl.textContent = formatPrice(promoData.old_price);
+                
+                const discountEl = document.createElement('div');
+                discountEl.className = 'promo-discount';
+                discountEl.textContent = promoData.discount;
+                
+                const newPriceEl = document.createElement('div');
+                newPriceEl.className = 'promo-new-price';
+                newPriceEl.textContent = formatPrice(promoData.new_price);
+                
+                const refEl = document.createElement('div');
+                refEl.className = 'promo-ref';
+                refEl.textContent = promoData.reference;
+                
+                label.appendChild(oldPriceEl);
+                label.appendChild(discountEl);
+                label.appendChild(newPriceEl);
+                label.appendChild(refEl);
+            } else {
+                label.className = 'print-label';
 
-            const refDiv = document.createElement('div');
-            refDiv.className = 'print-ref';
-            refDiv.textContent = job.details;
-            label.appendChild(refDiv);
+                const refDiv = document.createElement('div');
+                refDiv.className = 'print-ref';
+                refDiv.textContent = job.details;
+                label.appendChild(refDiv);
 
-            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.id = `ps-bc-${i}`;
-            label.appendChild(svg);
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.id = `ps-bc-${i}`;
+                label.appendChild(svg);
+            }
 
             printZone.appendChild(label);
         }
 
-        // 4. Render barcodes
-        for (let i = 0; i < job.quantity; i++) {
-            const barcodeOpts = {
-                width: 2, height: 55,
-                displayValue: true, fontSize: 11,
-                margin: 0, marginLeft: 2, marginRight: 2,
-                background: '#ffffff', lineColor: '#000000'
-            };
-            try {
-                JsBarcode(`#ps-bc-${i}`, job.barcode, { ...barcodeOpts, format: 'EAN13' });
-            } catch(e) {
-                JsBarcode(`#ps-bc-${i}`, job.barcode, { ...barcodeOpts, format: 'CODE128' });
+        // 4. Render barcodes (if not promo)
+        if (!isPromo) {
+            for (let i = 0; i < job.quantity; i++) {
+                const barcodeOpts = {
+                    width: 2, height: 55,
+                    displayValue: true, fontSize: 11,
+                    margin: 0, marginLeft: 2, marginRight: 2,
+                    background: '#ffffff', lineColor: '#000000'
+                };
+                try {
+                    JsBarcode(`#ps-bc-${i}`, job.barcode, { ...barcodeOpts, format: 'EAN13' });
+                } catch(e) {
+                    JsBarcode(`#ps-bc-${i}`, job.barcode, { ...barcodeOpts, format: 'CODE128' });
+                }
             }
         }
 
@@ -529,11 +632,19 @@
         const now = new Date();
         const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
+        let displayName = job.details;
+        if (job.barcode === 'TICKET_PROMO') {
+            try {
+                const data = JSON.parse(job.details);
+                displayName = `🏷️ Promo: ${data.reference} (${data.discount})`;
+            } catch(e) {}
+        }
+
         const item = document.createElement('div');
         item.className = 'history-item';
         item.innerHTML = `
             <span class="history-time">${time}</span>
-            <span class="history-details">${job.details}</span>
+            <span class="history-details">${displayName}</span>
             <span class="history-qty">×${job.quantity}</span>
             <span class="history-status">✓ OK</span>
         `;
@@ -623,6 +734,16 @@
                 <div class="flex flex-col">
                     <span class="text-sm font-bold leading-tight group-hover:text-white">Ticketage sans ticket</span>
                     <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Impression Mobile</span>
+                </div>
+            </a>
+
+            <a href="ticticket.html" class="flex items-center gap-4 px-4 py-3 rounded-lg hover:bg-white/5 border border-transparent hover:border-white/10 text-slate-400 group transition-all">
+                <div class="w-8 h-8 rounded bg-slate-800 flex items-center justify-center group-hover:bg-[#F43F5E]/20">
+                    <i data-lucide="ticket" class="w-4 h-4 text-slate-400 group-hover:text-[#F43F5E]"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-sm font-bold leading-tight group-hover:text-white">Ticketage avec ticket</span>
+                    <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Solde & Remises</span>
                 </div>
             </a>
 
