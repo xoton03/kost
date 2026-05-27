@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kost-v8.0';
+const CACHE_NAME = 'kost-v9.0';
 const urlsToCache = [
   './',
   './index.html',

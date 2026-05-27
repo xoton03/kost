@@ -9,7 +9,7 @@ window.SUPABASE_KEY = window.SUPABASE_KEY || "sb_publishable_gshF6Y08DYJYO9c8Z_C
 // Initialize Dexie
 const db = new Dexie("KostSharedDB");
 
-// Schema Definition (V8)
+// Schema Definition (V9)
 db.version(5).stores({
     catalogue_articles: "gencod, ref_article, libelle, prix_tarif, prix_reduit, brand, type_article, taille, couleur, marche, genre, groupe"
 });
