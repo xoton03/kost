@@ -512,305 +512,352 @@
     <div id="print-zone"></div>
 
     <script>
-    // ============================================================
-    // CONFIG
-    // ============================================================
-    window.SUPABASE_URL = window.SUPABASE_URL || "https://jphzmgscxpejcyjlnspq.supabase.co";
-    window.SUPABASE_KEY = window.SUPABASE_KEY || "sb_publishable_gshF6Y08DYJYO9c8Z_Cv2Q_9nEZr7J9";
+    window.addEventListener('DOMContentLoaded', () => {
+        // ============================================================
+        // CONFIG
+        // ============================================================
+        window.SUPABASE_URL = window.SUPABASE_URL || "https://jphzmgscxpejcyjlnspq.supabase.co";
+        window.SUPABASE_KEY = window.SUPABASE_KEY || "sb_publishable_gshF6Y08DYJYO9c8Z_Cv2Q_9nEZr7J9";
 
-    const { createClient } = supabase;
-    const client = createClient(SUPABASE_URL, SUPABASE_KEY);
+        const { createClient } = supabase;
+        const client = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // ============================================================
-    // STATUS UI
-    // ============================================================
-    function setStatus(state) {
-        const badge = document.getElementById('status-badge');
-        const text  = document.getElementById('status-text');
-        badge.className = `status-badge ${state}`;
-        const labels = { connected: 'Connectée', disconnected: 'Déconnectée', connecting: 'Connexion...' };
-        text.textContent = labels[state] || 'Inconnu';
-    }
-
-    // ============================================================
-    // SUPABASE HELPERS
-    // ============================================================
-    async function sbFetch(path, method = 'GET', body = null) {
-        const opts = {
-            method,
-            headers: {
-                'apikey': SUPABASE_KEY,
-                'Authorization': `Bearer ${SUPABASE_KEY}`,
-                'Content-Type': 'application/json'
-            }
-        };
-        if (body) opts.body = JSON.stringify(body);
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, opts);
-        if (!res.ok) throw new Error(`Supabase error: ${res.status}`);
-        if (method === 'GET') return res.json();
-        return res;
-    }
-
-    async function markJobDone(id, isTicketTable = false) {
-        const table = isTicketTable ? 'print_queue_tickets' : 'print_queue';
-        await sbFetch(`${table}?id=eq.${id}`, 'PATCH', { status: 'done' });
-    }
-
-    async function markJobPrinting(id, isTicketTable = false) {
-        const table = isTicketTable ? 'print_queue_tickets' : 'print_queue';
-        await sbFetch(`${table}?id=eq.${id}`, 'PATCH', { status: 'printing' });
-    }
-
-    // ============================================================
-    // PRINT JOB QUEUE (prevents overlap)
-    // ============================================================
-    let isPrinting = false;
-    const localQueue = [];
-
-    async function enqueueJob(job) {
-        localQueue.push(job);
-        updateQueueUI();
-        if (!isPrinting) processNextJob();
-    }
-
-    async function processNextJob() {
-        if (localQueue.length === 0) { isPrinting = false; updateQueueUI(); return; }
-        isPrinting = true;
-        const job = localQueue.shift();
-        updateQueueUI();
-        await executePrintJob(job);
-    }
-
-    function updateQueueUI() {
-        const list = document.getElementById('queue-list');
-        if (!list) return;
-        list.innerHTML = '';
-        
-        if (localQueue.length === 0) {
-            list.innerHTML = '<p class="queue-empty text-[10px] text-slate-500 font-bold uppercase text-center py-8">Aucun travail en attente</p>';
-            return;
+        // ============================================================
+        // STATUS UI
+        // ============================================================
+        function setStatus(state) {
+            const badge = document.getElementById('status-badge');
+            const text  = document.getElementById('status-text');
+            badge.className = `status-badge ${state}`;
+            const labels = { connected: 'Connectée', disconnected: 'Déconnectée', connecting: 'Connexion...' };
+            text.textContent = labels[state] || 'Inconnu';
         }
-        
-        localQueue.forEach((job) => {
+
+        // ============================================================
+        // SUPABASE HELPERS
+        // ============================================================
+        async function sbFetch(path, method = 'GET', body = null) {
+            const opts = {
+                method,
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                    'Content-Type': 'application/json'
+                }
+            };
+            if (body) opts.body = JSON.stringify(body);
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, opts);
+            if (!res.ok) throw new Error(`Supabase error: ${res.status}`);
+            if (method === 'GET') return res.json();
+            return res;
+        }
+
+        async function markJobDone(id, isTicketTable = false) {
+            const table = isTicketTable ? 'print_queue_tickets' : 'print_queue';
+            await sbFetch(`${table}?id=eq.${id}`, 'PATCH', { status: 'done' });
+        }
+
+        async function markJobPrinting(id, isTicketTable = false) {
+            const table = isTicketTable ? 'print_queue_tickets' : 'print_queue';
+            await sbFetch(`${table}?id=eq.${id}`, 'PATCH', { status: 'printing' });
+        }
+
+        // ============================================================
+        // PRINT JOB QUEUE (prevents overlap)
+        // ============================================================
+        let isPrinting = false;
+        const localQueue = [];
+
+        async function enqueueJob(job) {
+            localQueue.push(job);
+            updateQueueUI();
+            if (!isPrinting) processNextJob();
+        }
+
+        async function processNextJob() {
+            if (localQueue.length === 0) { isPrinting = false; updateQueueUI(); return; }
+            isPrinting = true;
+            const job = localQueue.shift();
+            updateQueueUI();
+            await executePrintJob(job);
+        }
+
+        function updateQueueUI() {
+            const list = document.getElementById('queue-list');
+            if (!list) return;
+            list.innerHTML = '';
+            
+            if (localQueue.length === 0) {
+                list.innerHTML = '<p class="queue-empty text-[10px] text-slate-500 font-bold uppercase text-center py-8">Aucun travail en attente</p>';
+                return;
+            }
+            
+            localQueue.forEach((job) => {
+                let displayName = job.details;
+                if (job.barcode === 'TICKET_PROMO') {
+                    try {
+                        const data = JSON.parse(job.details);
+                        displayName = `🏷️ Promo: ${data.reference} (${data.discount})`;
+                    } catch(e) {}
+                } else {
+                    displayName = `📦 ${job.details || job.barcode}`;
+                }
+                
+                const item = document.createElement('div');
+                item.className = 'queue-item';
+                
+                const timeSpan = document.createElement('span');
+                timeSpan.className = 'queue-time';
+                const time = job.created_at ? new Date(job.created_at) : new Date();
+                timeSpan.textContent = `${String(time.getHours()).padStart(2,'0')}:${String(time.getMinutes()).padStart(2,'0')}`;
+                
+                const detailsSpan = document.createElement('span');
+                detailsSpan.className = 'queue-details';
+                detailsSpan.textContent = displayName;
+                
+                const qtySpan = document.createElement('span');
+                qtySpan.className = 'queue-qty';
+                qtySpan.textContent = `×${job.quantity}`;
+                
+                const statusSpan = document.createElement('span');
+                statusSpan.className = 'queue-status';
+                statusSpan.textContent = 'ATTENTE';
+                
+                item.appendChild(timeSpan);
+                item.appendChild(detailsSpan);
+                item.appendChild(qtySpan);
+                item.appendChild(statusSpan);
+                
+                list.appendChild(item);
+            });
+        }
+
+        // ============================================================
+        // PRINT EXECUTION
+        // ============================================================
+        // Format price helper
+        function formatPrice(val) {
+            if (!val || isNaN(val)) return '--.-- DA';
+            let s = parseFloat(val).toFixed(2);
+            return s + ' DA';
+        }
+
+        async function executePrintJob(job) {
+            // 1. Claim the job (mark as 'printing') to prevent other stations from taking it
+            try {
+                await markJobPrinting(job.id, job.isTicketTable);
+            } catch(e) {
+                console.warn('Could not claim job', job.id, e);
+                // If we can't mark it, still try to print (best effort)
+            }
+
+            // Detect if promo job
+            let isPromo = false;
+            let promoData = null;
+            if (job.barcode === 'TICKET_PROMO') {
+                isPromo = true;
+                try {
+                    promoData = JSON.parse(job.details);
+                } catch(e) {
+                    console.error('Failed to parse promo job details:', e);
+                }
+            }
+
+            // 2. Show active job UI
+            document.getElementById('idle-card').style.opacity = '0.3';
+            const jobCard = document.getElementById('job-card');
+            jobCard.classList.add('active');
+            
+            if (isPromo && promoData) {
+                document.getElementById('job-details').textContent = `🏷️ Promo: ${promoData.reference} (${promoData.discount})`;
+                document.getElementById('job-qty').textContent = `${job.quantity} étiquette${job.quantity > 1 ? 's' : ''}`;
+                document.getElementById('job-barcode').textContent = `Ancien: ${formatPrice(promoData.old_price)} ➔ Nouveau: ${formatPrice(promoData.new_price)}`;
+            } else {
+                document.getElementById('job-details').textContent = job.details;
+                document.getElementById('job-qty').textContent = `${job.quantity} étiquette${job.quantity > 1 ? 's' : ''}`;
+                document.getElementById('job-barcode').textContent = `Code-barres : ${job.barcode}`;
+            }
+
+            // 3. Build print zone
+            const printZone = document.getElementById('print-zone');
+            printZone.innerHTML = '';
+
+            for (let i = 0; i < job.quantity; i++) {
+                const label = document.createElement('div');
+                
+                if (isPromo && promoData) {
+                    label.className = 'print-label promo-label';
+                    
+                    const oldPriceEl = document.createElement('div');
+                    oldPriceEl.className = 'promo-old-price';
+                    oldPriceEl.textContent = formatPrice(promoData.old_price);
+                    
+                    const discountEl = document.createElement('div');
+                    discountEl.className = 'promo-discount';
+                    discountEl.textContent = promoData.discount;
+                    
+                    const newPriceEl = document.createElement('div');
+                    newPriceEl.className = 'promo-new-price';
+                    newPriceEl.textContent = formatPrice(promoData.new_price);
+                    
+                    const refEl = document.createElement('div');
+                    refEl.className = 'promo-ref';
+                    refEl.textContent = promoData.reference;
+                    
+                    label.appendChild(oldPriceEl);
+                    label.appendChild(discountEl);
+                    label.appendChild(newPriceEl);
+                    label.appendChild(refEl);
+                } else {
+                    label.className = 'print-label';
+
+                    const refDiv = document.createElement('div');
+                    refDiv.className = 'print-ref';
+                    refDiv.textContent = job.details;
+                    label.appendChild(refDiv);
+
+                    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svg.id = `ps-bc-${i}`;
+                    label.appendChild(svg);
+                }
+
+                printZone.appendChild(label);
+            }
+
+            // 4. Render barcodes (if not promo)
+            if (!isPromo) {
+                for (let i = 0; i < job.quantity; i++) {
+                    const barcodeOpts = {
+                        width: 2, height: 55,
+                        displayValue: true, fontSize: 11,
+                        margin: 0, marginLeft: 2, marginRight: 2,
+                        background: '#ffffff', lineColor: '#000000'
+                    };
+                    try {
+                        JsBarcode(`#ps-bc-${i}`, job.barcode, { ...barcodeOpts, format: 'EAN13' });
+                    } catch(e) {
+                        JsBarcode(`#ps-bc-${i}`, job.barcode, { ...barcodeOpts, format: 'CODE128' });
+                    }
+                }
+            }
+
+            // 5. Trigger print
+            window.print();
+
+            // 6. Mark as done in Supabase (anti-doublon)
+            try {
+                await markJobDone(job.id, job.isTicketTable);
+            } catch(e) {
+                console.error('Could not mark job done:', e);
+            }
+
+            // 7. Add to history
+            addToHistory(job);
+
+            // 8. Reset UI after short delay
+            await new Promise(r => setTimeout(r, 1500));
+            jobCard.classList.remove('active');
+            document.getElementById('idle-card').style.opacity = '1';
+
+            // 9. Process next job
+            processNextJob();
+        }
+
+        // ============================================================
+        // HISTORY
+        // ============================================================
+        function addToHistory(job) {
+            const list = document.getElementById('history-list');
+            const empty = list.querySelector('.history-empty');
+            if (empty) empty.remove();
+
+            const now = new Date();
+            const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
             let displayName = job.details;
             if (job.barcode === 'TICKET_PROMO') {
                 try {
                     const data = JSON.parse(job.details);
                     displayName = `🏷️ Promo: ${data.reference} (${data.discount})`;
                 } catch(e) {}
-            } else {
-                displayName = `📦 ${job.details || job.barcode}`;
             }
-            
+
             const item = document.createElement('div');
-            item.className = 'queue-item';
-            
-            const timeSpan = document.createElement('span');
-            timeSpan.className = 'queue-time';
-            const time = job.created_at ? new Date(job.created_at) : new Date();
-            timeSpan.textContent = `${String(time.getHours()).padStart(2,'0')}:${String(time.getMinutes()).padStart(2,'0')}`;
-            
-            const detailsSpan = document.createElement('span');
-            detailsSpan.className = 'queue-details';
-            detailsSpan.textContent = displayName;
-            
-            const qtySpan = document.createElement('span');
-            qtySpan.className = 'queue-qty';
-            qtySpan.textContent = `×${job.quantity}`;
-            
-            const statusSpan = document.createElement('span');
-            statusSpan.className = 'queue-status';
-            statusSpan.textContent = 'ATTENTE';
-            
-            item.appendChild(timeSpan);
-            item.appendChild(detailsSpan);
-            item.appendChild(qtySpan);
-            item.appendChild(statusSpan);
-            
-            list.appendChild(item);
-        });
-    }
-
-    // ============================================================
-    // PRINT EXECUTION
-    // ============================================================
-    // Format price helper
-    function formatPrice(val) {
-        if (!val || isNaN(val)) return '--.-- DA';
-        let s = parseFloat(val).toFixed(2);
-        return s + ' DA';
-    }
-
-    async function executePrintJob(job) {
-        // 1. Claim the job (mark as 'printing') to prevent other stations from taking it
-        try {
-            await markJobPrinting(job.id, job.isTicketTable);
-        } catch(e) {
-            console.warn('Could not claim job', job.id, e);
-            // If we can't mark it, still try to print (best effort)
+            item.className = 'history-item';
+            item.innerHTML = `
+                <span class="history-time">${time}</span>
+                <span class="history-details">${displayName}</span>
+                <span class="history-qty">×${job.quantity}</span>
+                <span class="history-status">✓ OK</span>
+            `;
+            list.insertBefore(item, list.firstChild);
         }
 
-        // Detect if promo job
-        let isPromo = false;
-        let promoData = null;
-        if (job.barcode === 'TICKET_PROMO') {
-            isPromo = true;
+        let startupChecked = false;
+        async function checkPendingJobsOnStartup() {
+            if (startupChecked) return;
+            startupChecked = true;
             try {
-                promoData = JSON.parse(job.details);
-            } catch(e) {
-                console.error('Failed to parse promo job details:', e);
-            }
-        }
-
-        // 2. Show active job UI
-        document.getElementById('idle-card').style.opacity = '0.3';
-        const jobCard = document.getElementById('job-card');
-        jobCard.classList.add('active');
-        
-        if (isPromo && promoData) {
-            document.getElementById('job-details').textContent = `🏷️ Promo: ${promoData.reference} (${promoData.discount})`;
-            document.getElementById('job-qty').textContent = `${job.quantity} étiquette${job.quantity > 1 ? 's' : ''}`;
-            document.getElementById('job-barcode').textContent = `Ancien: ${formatPrice(promoData.old_price)} ➔ Nouveau: ${formatPrice(promoData.new_price)}`;
-        } else {
-            document.getElementById('job-details').textContent = job.details;
-            document.getElementById('job-qty').textContent = `${job.quantity} étiquette${job.quantity > 1 ? 's' : ''}`;
-            document.getElementById('job-barcode').textContent = `Code-barres : ${job.barcode}`;
-        }
-
-        // 3. Build print zone
-        const printZone = document.getElementById('print-zone');
-        printZone.innerHTML = '';
-
-        for (let i = 0; i < job.quantity; i++) {
-            const label = document.createElement('div');
-            
-            if (isPromo && promoData) {
-                label.className = 'print-label promo-label';
-                
-                const oldPriceEl = document.createElement('div');
-                oldPriceEl.className = 'promo-old-price';
-                oldPriceEl.textContent = formatPrice(promoData.old_price);
-                
-                const discountEl = document.createElement('div');
-                discountEl.className = 'promo-discount';
-                discountEl.textContent = promoData.discount;
-                
-                const newPriceEl = document.createElement('div');
-                newPriceEl.className = 'promo-new-price';
-                newPriceEl.textContent = formatPrice(promoData.new_price);
-                
-                const refEl = document.createElement('div');
-                refEl.className = 'promo-ref';
-                refEl.textContent = promoData.reference;
-                
-                label.appendChild(oldPriceEl);
-                label.appendChild(discountEl);
-                label.appendChild(newPriceEl);
-                label.appendChild(refEl);
-            } else {
-                label.className = 'print-label';
-
-                const refDiv = document.createElement('div');
-                refDiv.className = 'print-ref';
-                refDiv.textContent = job.details;
-                label.appendChild(refDiv);
-
-                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                svg.id = `ps-bc-${i}`;
-                label.appendChild(svg);
-            }
-
-            printZone.appendChild(label);
-        }
-
-        // 4. Render barcodes (if not promo)
-        if (!isPromo) {
-            for (let i = 0; i < job.quantity; i++) {
-                const barcodeOpts = {
-                    width: 2, height: 55,
-                    displayValue: true, fontSize: 11,
-                    margin: 0, marginLeft: 2, marginRight: 2,
-                    background: '#ffffff', lineColor: '#000000'
-                };
-                try {
-                    JsBarcode(`#ps-bc-${i}`, job.barcode, { ...barcodeOpts, format: 'EAN13' });
-                } catch(e) {
-                    JsBarcode(`#ps-bc-${i}`, job.barcode, { ...barcodeOpts, format: 'CODE128' });
+                // 1. Fetch from print_queue (classic)
+                const jobs = await sbFetch('print_queue?status=eq.pending&order=created_at.asc');
+                if (jobs && jobs.length > 0) {
+                    console.log(`${jobs.length} job(s) classique(s) en attente trouvé(s) au démarrage.`);
+                    for (const job of jobs) {
+                        enqueueJob(job);
+                    }
                 }
+
+                // 2. Fetch from print_queue_tickets (promo tickets)
+                const ticketJobs = await sbFetch('print_queue_tickets?status=eq.pending&order=created_at.asc');
+                if (ticketJobs && ticketJobs.length > 0) {
+                    console.log(`${ticketJobs.length} job(s) ticket promo en attente trouvé(s) au démarrage.`);
+                    for (const job of ticketJobs) {
+                        const mappedJob = {
+                            id: job.id,
+                            barcode: 'TICKET_PROMO',
+                            quantity: job.quantity,
+                            status: job.status,
+                            isTicketTable: true,
+                            details: JSON.stringify({
+                                type: 'promo',
+                                old_price: job.old_price,
+                                new_price: job.new_price,
+                                discount: job.discount,
+                                reference: job.reference
+                            })
+                        };
+                        enqueueJob(mappedJob);
+                    }
+                }
+            } catch(e) {
+                console.error('Erreur vérification jobs au démarrage:', e);
+                // Reset flag on error to allow retry
+                startupChecked = false;
             }
         }
 
-        // 5. Trigger print
-        window.print();
-
-        // 6. Mark as done in Supabase (anti-doublon)
-        try {
-            await markJobDone(job.id, job.isTicketTable);
-        } catch(e) {
-            console.error('Could not mark job done:', e);
-        }
-
-        // 7. Add to history
-        addToHistory(job);
-
-        // 8. Reset UI after short delay
-        await new Promise(r => setTimeout(r, 1500));
-        jobCard.classList.remove('active');
-        document.getElementById('idle-card').style.opacity = '1';
-
-        // 9. Process next job
-        processNextJob();
-    }
-
-    // ============================================================
-    // HISTORY
-    // ============================================================
-    function addToHistory(job) {
-        const list = document.getElementById('history-list');
-        const empty = list.querySelector('.history-empty');
-        if (empty) empty.remove();
-
-        const now = new Date();
-        const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-
-        let displayName = job.details;
-        if (job.barcode === 'TICKET_PROMO') {
-            try {
-                const data = JSON.parse(job.details);
-                displayName = `🏷️ Promo: ${data.reference} (${data.discount})`;
-            } catch(e) {}
-        }
-
-        const item = document.createElement('div');
-        item.className = 'history-item';
-        item.innerHTML = `
-            <span class="history-time">${time}</span>
-            <span class="history-details">${displayName}</span>
-            <span class="history-qty">×${job.quantity}</span>
-            <span class="history-status">✓ OK</span>
-        `;
-        list.insertBefore(item, list.firstChild);
-    }
-
-    let startupChecked = false;
-    async function checkPendingJobsOnStartup() {
-        if (startupChecked) return;
-        startupChecked = true;
-        try {
-            // 1. Fetch from print_queue (classic)
-            const jobs = await sbFetch('print_queue?status=eq.pending&order=created_at.asc');
-            if (jobs && jobs.length > 0) {
-                console.log(`${jobs.length} job(s) classique(s) en attente trouvé(s) au démarrage.`);
-                for (const job of jobs) {
+        // ============================================================
+        // SUPABASE REALTIME SUBSCRIPTION
+        // ============================================================
+        const channel = client
+            .channel('print-station-v2')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'print_queue' },
+                (payload) => {
+                    const job = payload.new;
+                    if (job.status !== 'pending') return;
+                    console.log('Nouveau job classique reçu via Realtime:', job);
                     enqueueJob(job);
                 }
-            }
-
-            // 2. Fetch from print_queue_tickets (promo tickets)
-            const ticketJobs = await sbFetch('print_queue_tickets?status=eq.pending&order=created_at.asc');
-            if (ticketJobs && ticketJobs.length > 0) {
-                console.log(`${ticketJobs.length} job(s) ticket promo en attente trouvé(s) au démarrage.`);
-                for (const job of ticketJobs) {
+            )
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'print_queue_tickets' },
+                (payload) => {
+                    const job = payload.new;
+                    if (job.status !== 'pending') return;
+                    console.log('Nouveau job ticket promo reçu via Realtime:', job);
                     const mappedJob = {
                         id: job.id,
                         barcode: 'TICKET_PROMO',
@@ -827,65 +874,21 @@
                     };
                     enqueueJob(mappedJob);
                 }
-            }
-        } catch(e) {
-            console.error('Erreur vérification jobs au démarrage:', e);
-            // Reset flag on error to allow retry
-            startupChecked = false;
-        }
-    }
-
-    // ============================================================
-    // SUPABASE REALTIME SUBSCRIPTION
-    // ============================================================
-    const channel = client
-        .channel('print-station-v2')
-        .on(
-            'postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'print_queue' },
-            (payload) => {
-                const job = payload.new;
-                if (job.status !== 'pending') return;
-                console.log('Nouveau job classique reçu via Realtime:', job);
-                enqueueJob(job);
-            }
-        )
-        .on(
-            'postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'print_queue_tickets' },
-            (payload) => {
-                const job = payload.new;
-                if (job.status !== 'pending') return;
-                console.log('Nouveau job ticket promo reçu via Realtime:', job);
-                const mappedJob = {
-                    id: job.id,
-                    barcode: 'TICKET_PROMO',
-                    quantity: job.quantity,
-                    status: job.status,
-                    isTicketTable: true,
-                    details: JSON.stringify({
-                        type: 'promo',
-                        old_price: job.old_price,
-                        new_price: job.new_price,
-                        discount: job.discount,
-                        reference: job.reference
-                    })
-                };
-                enqueueJob(mappedJob);
-            }
-        )
-        .subscribe((status) => {
-            console.log('Realtime status:', status);
-            if (status === 'SUBSCRIBED') {
-                setStatus('connected');
-                // Check for any jobs that arrived while we were offline
-                checkPendingJobsOnStartup();
-            } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-                setStatus('disconnected');
-            } else {
-                setStatus('connecting');
-            }
-        });
+            )
+            .subscribe((status) => {
+                console.log('Realtime status:', status);
+                if (status === 'SUBSCRIBED') {
+                    setStatus('connected');
+                    // Check for any jobs that arrived while we were offline
+                    checkPendingJobsOnStartup();
+                } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+                    setStatus('disconnected');
+                } else {
+                    setStatus('connecting');
+                }
+            });
+    });
+    </script>
 
 
 
