@@ -127,6 +127,53 @@
             font-family: monospace;
         }
 
+        /* ===== MIDDLE COLUMN: Queue ===== */
+        .col-queue {
+            width: 320px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        #queue-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+        }
+        .queue-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            background: #0f0f0f;
+            border: 1px solid #ff6d0030;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .queue-item:hover { border-color: #ff6d0080; background: #1a0f08; }
+        .queue-time { font-size: 0.65rem; color: #ff6d00; flex-shrink: 0; font-variant-numeric: tabular-nums; font-weight: 700; }
+        .queue-details { flex: 1; font-size: 0.7rem; color: #e2e8f0; line-height: 1.3; font-weight: 500; }
+        .queue-qty {
+            font-size: 0.8rem;
+            font-weight: 900;
+            color: #ff6d00;
+            flex-shrink: 0;
+        }
+        .queue-status {
+            font-size: 0.55rem;
+            font-weight: 800;
+            color: #ff6d00;
+            background: #ff6d0015;
+            border: 1px solid #ff6d0040;
+            padding: 0.1rem 0.4rem;
+            border-radius: 3px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+
         /* ===== RIGHT COLUMN: History ===== */
         .col-right {
             width: 320px;
@@ -195,12 +242,12 @@
             display: flex;
             gap: 2rem;
             padding: 2rem;
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
             width: 100%;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 1024px) {
             main {
                 flex-direction: column;
                 padding: 1rem;
@@ -235,12 +282,12 @@
             .job-details {
                 font-size: 0.9rem;
             }
-            .col-right {
+            .col-queue, .col-right {
                 width: 100%;
                 margin-top: 1rem;
             }
-            #history-list {
-                max-height: none;
+            #queue-list, #history-list {
+                max-height: 300px;
             }
         }
 
@@ -412,6 +459,14 @@
 
         </div>
 
+        <!-- Middle: File d'attente (waiting list) -->
+        <div class="col-queue">
+            <div class="section-label">File d'attente (Impression)</div>
+            <div id="queue-list">
+                <p class="queue-empty text-[10px] text-slate-500 font-bold uppercase text-center py-8">Aucun travail en attente</p>
+            </div>
+        </div>
+
         <!-- Right: history -->
         <div class="col-right">
             <div class="section-label">Historique de session</div>
@@ -482,14 +537,66 @@
 
     async function enqueueJob(job) {
         localQueue.push(job);
+        updateQueueUI();
         if (!isPrinting) processNextJob();
     }
 
     async function processNextJob() {
-        if (localQueue.length === 0) { isPrinting = false; return; }
+        if (localQueue.length === 0) { isPrinting = false; updateQueueUI(); return; }
         isPrinting = true;
         const job = localQueue.shift();
+        updateQueueUI();
         await executePrintJob(job);
+    }
+
+    function updateQueueUI() {
+        const list = document.getElementById('queue-list');
+        if (!list) return;
+        list.innerHTML = '';
+        
+        if (localQueue.length === 0) {
+            list.innerHTML = '<p class="queue-empty text-[10px] text-slate-500 font-bold uppercase text-center py-8">Aucun travail en attente</p>';
+            return;
+        }
+        
+        localQueue.forEach((job) => {
+            let displayName = job.details;
+            if (job.barcode === 'TICKET_PROMO') {
+                try {
+                    const data = JSON.parse(job.details);
+                    displayName = `🏷️ Promo: ${data.reference} (${data.discount})`;
+                } catch(e) {}
+            } else {
+                displayName = `📦 ${job.details || job.barcode}`;
+            }
+            
+            const item = document.createElement('div');
+            item.className = 'queue-item';
+            
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'queue-time';
+            const time = job.created_at ? new Date(job.created_at) : new Date();
+            timeSpan.textContent = `${String(time.getHours()).padStart(2,'0')}:${String(time.getMinutes()).padStart(2,'0')}`;
+            
+            const detailsSpan = document.createElement('span');
+            detailsSpan.className = 'queue-details';
+            detailsSpan.textContent = displayName;
+            
+            const qtySpan = document.createElement('span');
+            qtySpan.className = 'queue-qty';
+            qtySpan.textContent = `×${job.quantity}`;
+            
+            const statusSpan = document.createElement('span');
+            statusSpan.className = 'queue-status';
+            statusSpan.textContent = 'ATTENTE';
+            
+            item.appendChild(timeSpan);
+            item.appendChild(detailsSpan);
+            item.appendChild(qtySpan);
+            item.appendChild(statusSpan);
+            
+            list.appendChild(item);
+        });
     }
 
     // ============================================================
