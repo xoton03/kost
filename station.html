@@ -464,12 +464,14 @@
         return res;
     }
 
-    async function markJobDone(id) {
-        await sbFetch(`print_queue?id=eq.${id}`, 'PATCH', { status: 'done' });
+    async function markJobDone(id, isTicketTable = false) {
+        const table = isTicketTable ? 'print_queue_tickets' : 'print_queue';
+        await sbFetch(`${table}?id=eq.${id}`, 'PATCH', { status: 'done' });
     }
 
-    async function markJobPrinting(id) {
-        await sbFetch(`print_queue?id=eq.${id}`, 'PATCH', { status: 'printing' });
+    async function markJobPrinting(id, isTicketTable = false) {
+        const table = isTicketTable ? 'print_queue_tickets' : 'print_queue';
+        await sbFetch(`${table}?id=eq.${id}`, 'PATCH', { status: 'printing' });
     }
 
     // ============================================================
@@ -503,7 +505,7 @@
     async function executePrintJob(job) {
         // 1. Claim the job (mark as 'printing') to prevent other stations from taking it
         try {
-            await markJobPrinting(job.id);
+            await markJobPrinting(job.id, job.isTicketTable);
         } catch(e) {
             console.warn('Could not claim job', job.id, e);
             // If we can't mark it, still try to print (best effort)
@@ -604,7 +606,7 @@
 
         // 6. Mark as done in Supabase (anti-doublon)
         try {
-            await markJobDone(job.id);
+            await markJobDone(job.id, job.isTicketTable);
         } catch(e) {
             console.error('Could not mark job done:', e);
         }
@@ -651,49 +653,120 @@
         list.insertBefore(item, list.firstChild);
     }
 
-    // ============================================================
-    // CHECK PENDING JOBS ON STARTUP
-    // ============================================================
+    let startupChecked = false;
     async function checkPendingJobsOnStartup() {
+        if (startupChecked) return;
+        startupChecked = true;
         try {
+            // 1. Fetch from print_queue (classic)
             const jobs = await sbFetch('print_queue?status=eq.pending&order=created_at.asc');
             if (jobs && jobs.length > 0) {
-                console.log(`${jobs.length} job(s) en attente trouvé(s) au démarrage.`);
+                console.log(`${jobs.length} job(s) classique(s) en attente trouvé(s) au démarrage.`);
                 for (const job of jobs) {
                     enqueueJob(job);
                 }
             }
+
+            // 2. Fetch from print_queue_tickets (promo tickets)
+            const ticketJobs = await sbFetch('print_queue_tickets?status=eq.pending&order=created_at.asc');
+            if (ticketJobs && ticketJobs.length > 0) {
+                console.log(`${ticketJobs.length} job(s) ticket promo en attente trouvé(s) au démarrage.`);
+                for (const job of ticketJobs) {
+                    const mappedJob = {
+                        id: job.id,
+                        barcode: 'TICKET_PROMO',
+                        quantity: job.quantity,
+                        status: job.status,
+                        isTicketTable: true,
+                        details: JSON.stringify({
+                            type: 'promo',
+                            old_price: job.old_price,
+                            new_price: job.new_price,
+                            discount: job.discount,
+                            reference: job.reference
+                        })
+                    };
+                    enqueueJob(mappedJob);
+                }
+            }
         } catch(e) {
             console.error('Erreur vérification jobs au démarrage:', e);
+            // Reset flag on error to allow retry
+            startupChecked = false;
         }
     }
 
     // ============================================================
     // SUPABASE REALTIME SUBSCRIPTION
     // ============================================================
-    const channel = client
-        .channel('print-station-v2')
+    let channel1Connected = false;
+    let channel2Connected = false;
+
+    function updateRealtimeUIStatus() {
+        if (channel1Connected && channel2Connected) {
+            setStatus('connected');
+        } else if (!channel1Connected && !channel2Connected) {
+            setStatus('disconnected');
+        } else {
+            setStatus('connecting');
+        }
+    }
+
+    // Subscribe to print_queue (classic)
+    const channel1 = client
+        .channel('print-station-v2-classic')
         .on(
             'postgres_changes',
             { event: 'INSERT', schema: 'public', table: 'print_queue' },
             (payload) => {
                 const job = payload.new;
-                // Only handle pending jobs (ignore if already claimed/done)
                 if (job.status !== 'pending') return;
-                console.log('Nouveau job reçu via Realtime:', job);
+                console.log('Nouveau job classique reçu via Realtime:', job);
                 enqueueJob(job);
             }
         )
         .subscribe((status) => {
-            console.log('Realtime status:', status);
+            console.log('Realtime status channel 1:', status);
+            channel1Connected = (status === 'SUBSCRIBED');
+            updateRealtimeUIStatus();
             if (status === 'SUBSCRIBED') {
-                setStatus('connected');
-                // Check for any jobs that arrived while we were offline
                 checkPendingJobsOnStartup();
-            } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-                setStatus('disconnected');
-            } else {
-                setStatus('connecting');
+            }
+        });
+
+    // Subscribe to print_queue_tickets (promo tickets)
+    const channel2 = client
+        .channel('print-station-v2-tickets')
+        .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'print_queue_tickets' },
+            (payload) => {
+                const job = payload.new;
+                if (job.status !== 'pending') return;
+                console.log('Nouveau job ticket promo reçu via Realtime:', job);
+                const mappedJob = {
+                    id: job.id,
+                    barcode: 'TICKET_PROMO',
+                    quantity: job.quantity,
+                    status: job.status,
+                    isTicketTable: true,
+                    details: JSON.stringify({
+                        type: 'promo',
+                        old_price: job.old_price,
+                        new_price: job.new_price,
+                        discount: job.discount,
+                        reference: job.reference
+                    })
+                };
+                enqueueJob(mappedJob);
+            }
+        )
+        .subscribe((status) => {
+            console.log('Realtime status channel 2:', status);
+            channel2Connected = (status === 'SUBSCRIBED');
+            updateRealtimeUIStatus();
+            if (status === 'SUBSCRIBED') {
+                checkPendingJobsOnStartup();
             }
         });
 

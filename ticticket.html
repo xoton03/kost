@@ -141,6 +141,11 @@
             letter-spacing: 0.05em;
         }
 
+        /* Hide print zone on screen */
+        #print-zone {
+            display: none;
+        }
+
         /* ===== PRINT STYLES: 35mm x 35mm thermal label ===== */
         @media print {
             @page {
@@ -551,16 +556,8 @@
             btn.innerHTML = '<i data-lucide="loader" class="w-5 h-5 animate-spin"></i> ENVOI EN COURS...';
             if (window.lucide) lucide.createIcons();
 
-            const promoPayload = {
-                type: "promo",
-                old_price: oldPrice.toString(),
-                new_price: newPrice.toString(),
-                discount: discountText,
-                reference: refText
-            };
-
             try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/print_queue`, {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/print_queue_tickets`, {
                     method: 'POST',
                     headers: {
                         'apikey': SUPABASE_KEY,
@@ -569,8 +566,10 @@
                         'Prefer': 'return=minimal'
                     },
                     body: JSON.stringify({
-                        barcode: 'TICKET_PROMO',
-                        details: JSON.stringify(promoPayload),
+                        old_price: oldPrice.toString(),
+                        new_price: newPrice.toString(),
+                        discount: discountText,
+                        reference: refText,
                         quantity: qty,
                         status: 'pending'
                     })
