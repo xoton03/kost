@@ -699,22 +699,8 @@
     // ============================================================
     // SUPABASE REALTIME SUBSCRIPTION
     // ============================================================
-    let channel1Connected = false;
-    let channel2Connected = false;
-
-    function updateRealtimeUIStatus() {
-        if (channel1Connected && channel2Connected) {
-            setStatus('connected');
-        } else if (!channel1Connected && !channel2Connected) {
-            setStatus('disconnected');
-        } else {
-            setStatus('connecting');
-        }
-    }
-
-    // Subscribe to print_queue (classic)
-    const channel1 = client
-        .channel('print-station-v2-classic')
+    const channel = client
+        .channel('print-station-v2')
         .on(
             'postgres_changes',
             { event: 'INSERT', schema: 'public', table: 'print_queue' },
@@ -725,18 +711,6 @@
                 enqueueJob(job);
             }
         )
-        .subscribe((status) => {
-            console.log('Realtime status channel 1:', status);
-            channel1Connected = (status === 'SUBSCRIBED');
-            updateRealtimeUIStatus();
-            if (status === 'SUBSCRIBED') {
-                checkPendingJobsOnStartup();
-            }
-        });
-
-    // Subscribe to print_queue_tickets (promo tickets)
-    const channel2 = client
-        .channel('print-station-v2-tickets')
         .on(
             'postgres_changes',
             { event: 'INSERT', schema: 'public', table: 'print_queue_tickets' },
@@ -762,11 +736,15 @@
             }
         )
         .subscribe((status) => {
-            console.log('Realtime status channel 2:', status);
-            channel2Connected = (status === 'SUBSCRIBED');
-            updateRealtimeUIStatus();
+            console.log('Realtime status:', status);
             if (status === 'SUBSCRIBED') {
+                setStatus('connected');
+                // Check for any jobs that arrived while we were offline
                 checkPendingJobsOnStartup();
+            } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+                setStatus('disconnected');
+            } else {
+                setStatus('connecting');
             }
         });
 
