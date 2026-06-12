@@ -305,7 +305,7 @@
                 font-family: 'Space Grotesk', sans-serif !important;
                 font-size: 8pt !important;
                 text-decoration: line-through !important;
-                color: #555 !important;
+                color: #000000 !important;
                 font-weight: 500 !important;
                 margin-bottom: 0.5mm !important;
             }
@@ -313,8 +313,8 @@
                 font-family: 'Space Grotesk', sans-serif !important;
                 font-size: 10pt !important;
                 font-weight: 900 !important;
-                background: #000000 !important;
-                color: #ffffff !important;
+                background: transparent !important;
+                color: #000000 !important;
                 padding: 0.2mm 2mm !important;
                 border-radius: 2px !important;
                 margin-bottom: 0.5mm !important;
@@ -334,7 +334,7 @@
                 font-size: 6pt !important;
                 font-weight: 700 !important;
                 text-transform: uppercase !important;
-                color: #333333 !important;
+                color: #000000 !important;
                 letter-spacing: 0.05em !important;
             }
         }
@@ -495,9 +495,9 @@
     // ============================================================
     // Format price helper
     function formatPrice(val) {
-        if (!val || isNaN(val)) return '--.-- €';
+        if (!val || isNaN(val)) return '--.-- DA';
         let s = parseFloat(val).toFixed(2);
-        return s + ' €';
+        return s + ' DA';
     }
 
     async function executePrintJob(job) {
