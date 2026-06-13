@@ -4,16 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flo - Terminal de Recherche de Prix</title>
+    <title>Prix Flo - Recherche de Prix</title>
     <link rel="icon" type="image/png" href="assets/favicon.png">
     <link rel="apple-touch-icon" href="assets/favicon.png">
     <link rel="manifest" href="manifest.json">
 
-    <!-- Fonts pairing matching Stitch Mockup -->
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 
-    <!-- Tailwind & Custom theme from Stitch project "KOST Flo prix" -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script id="tailwind-config">
         tailwind.config = {
@@ -21,124 +19,66 @@
           theme: {
             extend: {
               "colors": {
-                      "secondary-fixed-dim": "#c6c6c7",
-                      "tertiary-fixed-dim": "#c7c6c6",
-                      "tertiary-fixed": "#e3e2e2",
-                      "outline-variant": "#594136",
-                      "surface-variant": "#41312a",
-                      "surface-container-low": "#261812",
-                      "primary": "#ffb692",
-                      "secondary-fixed": "#e2e2e2",
-                      "surface-container-highest": "#41312a",
-                      "secondary": "#c6c6c7",
-                      "on-primary": "#562000",
-                      "surface-tint": "#ffb692",
-                      "inverse-surface": "#f7ddd2",
-                      "primary-container": "#ff6d00",
-                      "surface-container-high": "#362720",
-                      "on-error-container": "#ffdad6",
+                      "primary": "#ff6d00",
+                      "surface": "#141414",
                       "background": "#0A0A0A",
-                      "surface-bright": "#46362e",
-                      "on-background": "#f7ddd2",
-                      "on-secondary-fixed-variant": "#454747",
-                      "on-primary-container": "#582100",
                       "outline": "#333333",
-                      "on-tertiary": "#2f3131",
-                      "error-container": "#93000a",
-                      "surface-dim": "#1d100a",
-                      "tertiary": "#c7c6c6",
-                      "on-primary-fixed": "#341100",
-                      "on-secondary-container": "#b4b5b5",
-                      "on-tertiary-fixed-variant": "#464747",
-                      "primary-fixed-dim": "#ffb692",
-                      "inverse-primary": "#9f4200",
-                      "on-tertiary-container": "#313232",
-                      "surface": "#1A1A1A",
-                      "on-primary-fixed-variant": "#7a3000",
-                      "on-surface": "#f7ddd2",
-                      "on-secondary": "#2f3131",
-                      "error": "#ffb4ab",
-                      "surface-container-lowest": "#170b06",
-                      "on-error": "#690005",
-                      "secondary-container": "#454747",
-                      "primary-fixed": "#ffdbcb",
-                      "tertiary-container": "#9a9a9a",
-                      "on-tertiary-fixed": "#1a1c1c",
-                      "on-surface-variant": "#e2bfb0",
-                      "inverse-on-surface": "#3d2d26",
-                      "surface-container": "#2a1c16",
-                      "on-secondary-fixed": "#1a1c1c"
+                      "on-surface": "#ffffff",
+                      "on-surface-variant": "#a0a0a0",
+                      "primary-container": "#ff6d00",
+                      "secondary": "#888888",
               },
               "borderRadius": {
-                      "DEFAULT": "0px",
-                      "lg": "0px",
-                      "xl": "0px",
-                      "full": "0px"
-              },
-              "spacing": {
-                      "margin-desktop": "32px",
-                      "margin-mobile": "16px",
-                      "unit": "4px",
-                      "sidebar-width": "240px",
-                      "gutter": "16px"
+                      "DEFAULT": "8px",
+                      "lg": "12px",
+                      "xl": "16px",
               },
               "fontFamily": {
-                      "body-main": ["Inter"],
-                      "body-mono": ["JetBrains Mono"],
-                      "headline-md-mobile": ["Space Grotesk"],
-                      "label-caps": ["Space Grotesk"],
-                      "headline-md": ["Space Grotesk"],
-                      "display-lg": ["Space Grotesk"]
+                      "body": ["Inter", "sans-serif"],
+                      "heading": ["Space Grotesk", "sans-serif"],
+                      "mono": ["JetBrains Mono", "monospace"],
               },
-              "fontSize": {
-                      "body-main": ["14px", {"lineHeight": "1.5", "letterSpacing": "0em", "fontWeight": "400"}],
-                      "body-mono": ["13px", {"lineHeight": "1.4", "letterSpacing": "-0.02em", "fontWeight": "400"}],
-                      "headline-md-mobile": ["20px", {"lineHeight": "1.2", "letterSpacing": "0.08em", "fontWeight": "600"}],
-                      "label-caps": ["12px", {"lineHeight": "1.0", "letterSpacing": "0.15em", "fontWeight": "500"}],
-                      "headline-md": ["24px", {"lineHeight": "1.2", "letterSpacing": "0.08em", "fontWeight": "600"}],
-                      "display-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "0.05em", "fontWeight": "700"}]
-              }
             },
           },
         }
     </script>
 
-    <!-- Custom CSS styles matching the Obsidian Pulse look -->
     <style>
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
         body {
             background-color: #0A0A0A;
             color: #FFFFFF;
             min-height: 100dvh;
+            font-family: 'Inter', sans-serif;
         }
-        /* Custom scrollbar matching brutalist aesthetics */
         * {
             scrollbar-width: thin;
             scrollbar-color: #333333 transparent;
         }
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333333; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #ff6d00; }
+
+        /* Search input focus glow */
+        .search-wrapper:focus-within {
+            border-color: #ff6d00 !important;
+            box-shadow: 0 0 0 1px rgba(255, 109, 0, 0.3);
         }
-        ::-webkit-scrollbar-track {
-            background: transparent;
+
+        /* Empty state pulse */
+        @keyframes gentle-pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.7; }
         }
-        ::-webkit-scrollbar-thumb {
-            background: #333333;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #ff6d00;
-        }
+        .empty-pulse { animation: gentle-pulse 3s ease-in-out infinite; }
+
+        /* Scan laser for scanner modal */
         @keyframes scan-laser {
             0% { top: 0%; opacity: 0.3; }
             50% { top: 100%; opacity: 1; }
             100% { top: 0%; opacity: 0.3; }
         }
-        .animate-laser {
-            animation: scan-laser 3s linear infinite;
-        }
+        .animate-laser { animation: scan-laser 3s linear infinite; }
     </style>
 
     <script src="lucide.js" defer></script>
@@ -151,47 +91,60 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 
-<body class="font-body-main bg-background text-white selection:bg-primary-container selection:text-white">
+<body class="bg-background text-white selection:bg-primary selection:text-black">
 
-    <!-- TopAppBar -->
-    <header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-margin-mobile h-16 bg-background border-b border-outline">
+    <!-- Header -->
+    <header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-4 h-14 bg-background border-b border-outline">
         <div class="flex items-center gap-3">
             <!-- Hamburger button -->
             <button id="hamburger-trigger"
-                class="p-3 -ml-2 text-slate-400 hover:text-primary transition-all active:scale-90"
+                class="p-2 -ml-2 text-gray-400 hover:text-primary transition-all active:scale-90"
                 title="Ouvrir le menu">
                 <i data-lucide="menu" class="w-6 h-6"></i>
             </button>
 
-            <div id="logo-trigger" class="flex items-center gap-3 cursor-pointer select-none">
-                <h1 class="font-headline-md-mobile text-headline-md-mobile font-bold tracking-widest text-primary uppercase">FLO_CMD</h1>
+            <div id="logo-trigger" class="flex items-center gap-2 cursor-pointer select-none">
+                <span class="font-heading text-lg font-bold text-primary tracking-wide">Prix Flo</span>
             </div>
         </div>
+
+        <button id="btn-scan" class="p-2 text-gray-400 hover:text-primary transition-colors active:scale-90" title="Scanner un code-barre">
+            <i data-lucide="camera" class="w-5 h-5"></i>
+        </button>
     </header>
 
     <!-- Main Content -->
-    <main class="pt-24 pb-24 px-margin-mobile max-w-4xl mx-auto flex flex-col gap-6 w-full">
-        <!-- Search input section -->
-        <section class="flex flex-col gap-2 mb-2">
-            <label class="font-label-caps text-label-caps text-primary uppercase ml-1">SEARCH_CMD</label>
-            <div class="border border-outline bg-surface p-4 flex items-center justify-between gap-3">
-                <input id="search-input" class="bg-transparent border-none focus:ring-0 p-0 text-body-main font-body-mono placeholder:opacity-30 uppercase w-full text-white focus:outline-none" placeholder="ENTER_PRODUCT_ID" type="text" autocomplete="off"/>
-                <button id="btn-scan" class="text-primary hover:text-white transition-colors shrink-0">
-                    <i data-lucide="camera" class="w-6 h-6"></i>
-                </button>
+    <main class="pt-16 pb-6 px-4 max-w-2xl mx-auto flex flex-col gap-5 w-full min-h-screen">
+
+        <!-- Search Section -->
+        <section class="flex flex-col gap-2 mt-2">
+            <div class="search-wrapper flex items-center bg-surface border border-outline rounded-lg overflow-hidden transition-all duration-200">
+                <div class="pl-4 pr-2 text-gray-500">
+                    <i data-lucide="search" class="w-5 h-5"></i>
+                </div>
+                <input id="search-input"
+                    class="flex-1 bg-transparent border-none text-white font-body text-sm px-2 py-3.5 focus:ring-0 focus:outline-none placeholder:text-gray-600 uppercase"
+                    placeholder="Rechercher un article..."
+                    type="text"
+                    autocomplete="off"/>
             </div>
+            <p class="text-xs text-gray-500 pl-1">Rechercher par code-barre ou référence article</p>
         </section>
 
-        <!-- Results Grid: Single dynamic card layout for all widths -->
-        <div id="results-body-mobile" class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-            <!-- Dynamically populated brutalist cards -->
+        <!-- Results Grid -->
+        <div id="results-body-mobile" class="grid grid-cols-1 md:grid-cols-2 gap-5 w-full">
+            <!-- Empty State (shown before any search) -->
+            <div id="flo-empty-state" class="col-span-full flex flex-col items-center justify-center py-20 gap-4 empty-pulse">
+                <i data-lucide="search" class="w-12 h-12 text-gray-700"></i>
+                <p class="text-sm text-gray-600 font-heading font-medium">Scannez ou recherchez un article</p>
+            </div>
         </div>
 
-        <!-- Hidden desktop container for backward compatibility with older scripts if needed -->
+        <!-- Hidden desktop container for backward compatibility -->
         <div id="results-body-desktop" class="hidden"></div>
     </main>
 
-    <!-- Navigation Drawer (Retained identically) -->
+    <!-- Navigation Drawer -->
     <div id="nav-backdrop"
         class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] hidden opacity-0 transition-opacity duration-300">
     </div>
@@ -260,7 +213,7 @@
                     <i data-lucide="trending-up" class="w-4 h-4 text-orange-400"></i>
                 </div>
                 <div class="flex flex-col">
-                    <span class="text-sm font-bold leading-tight">Flo</span>
+                    <span class="text-sm font-bold leading-tight">Prix Flo</span>
                     <span class="text-[9px] text-orange-400 font-bold uppercase tracking-wider">Module Actif</span>
                 </div>
             </a>
@@ -272,13 +225,12 @@
                 </div>
                 <div class="flex flex-col">
                     <span class="text-sm font-bold leading-tight group-hover:text-white">DB Explorer</span>
-                    <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">V6.7.1</span>
+                    <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Visualiseur de Données</span>
                 </div>
             </a>
         </nav>
 
         <div class="absolute bottom-0 left-0 w-full p-6 border-t border-white/5 space-y-4">
-            <!-- Global Sync UI in Drawer -->
             <div class="space-y-3">
                 <button id="btn-sync-database" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded border border-white/5 text-[9px] font-bold uppercase flex items-center justify-center gap-2 transition-all">
                     <i data-lucide="refresh-cw" class="w-3 h-3"></i>
@@ -316,40 +268,24 @@
 
     <!-- Barcode Scanner Modal Overlay -->
     <div id="scanner-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[300] hidden flex flex-col items-center justify-center p-4">
-        <!-- Close Button (Absolute on top right) -->
-        <button id="btn-close-scanner" class="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors active:scale-95 z-50 flex items-center justify-center bg-black/40 border border-outline w-12 h-12 rounded-none" title="Fermer le scanner">
+        <button id="btn-close-scanner" class="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors active:scale-95 z-50 flex items-center justify-center bg-black/40 border border-outline w-12 h-12 rounded-lg" title="Fermer le scanner">
             <i data-lucide="x" class="w-6 h-6"></i>
         </button>
 
-        <!-- Scanner Card Container -->
-        <div class="w-full max-w-md border border-outline bg-surface p-6 flex flex-col gap-6 relative rounded-none">
-            <!-- Aesthetic Corner Accents -->
-            <div class="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-[#ff6d00]"></div>
-            <div class="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-[#ff6d00]"></div>
-            <div class="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-[#ff6d00]"></div>
-            <div class="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-[#ff6d00]"></div>
-
+        <div class="w-full max-w-md border border-outline bg-surface p-6 flex flex-col gap-6 relative rounded-lg">
             <div class="flex flex-col gap-1 border-b border-outline pb-4">
-                <span class="font-label-caps text-label-caps text-primary uppercase">CAMERA_SCANNER_ACTIVE</span>
-                <span class="font-body-mono text-[10px] text-slate-500 uppercase tracking-widest font-bold">HOLD BARCODE WITHIN VIEWPORT</span>
+                <span class="font-heading text-sm font-semibold text-primary uppercase tracking-wider">Scanner actif</span>
+                <span class="text-[11px] text-gray-500">Maintenez le code-barre dans le cadre</span>
             </div>
 
-            <!-- Video/Scanner Render Area -->
-            <div class="relative w-full aspect-[4/3] bg-black border border-outline overflow-hidden flex items-center justify-center rounded-none">
-                <!-- HTML5 QR Code element -->
+            <div class="relative w-full aspect-[4/3] bg-black border border-outline overflow-hidden flex items-center justify-center rounded-lg">
                 <div id="scanner-reader" class="w-full h-full bg-black"></div>
-                
-                <!-- Laser line scanner animation -->
                 <div id="scanner-laser" class="absolute left-0 right-0 h-0.5 bg-[#ff6d00] shadow-[0_0_10px_#ff6d00] animate-laser pointer-events-none z-10" style="top: 0%;"></div>
             </div>
 
-            <!-- Status -->
-            <div class="flex flex-col gap-2">
-                <span class="font-label-caps text-[9px] text-slate-400 uppercase">Status & Helpers</span>
-                <div class="font-body-mono text-xs text-slate-500 flex items-center justify-between">
-                    <span>STATUS:</span>
-                    <span id="scanner-status" class="text-primary font-bold">AWAITING_CAMERA_PERMISSION</span>
-                </div>
+            <div class="flex items-center justify-between text-xs text-gray-500">
+                <span>Status :</span>
+                <span id="scanner-status" class="text-primary font-medium">En attente...</span>
             </div>
         </div>
     </div>
