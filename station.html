@@ -395,6 +395,36 @@
                 color: #000000 !important;
                 letter-spacing: 0.05em !important;
             }
+            /* Flo Price Label Print Styles */
+            .flo-label {
+                width: 35mm !important;
+                height: 35mm !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: center !important;
+                padding: 1.5mm !important;
+                box-sizing: border-box !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+            }
+            .flo-price {
+                font-family: 'Space Grotesk', sans-serif !important;
+                font-size: 15pt !important;
+                font-weight: 900 !important;
+                color: #000000 !important;
+                margin-bottom: 1.5mm !important;
+                text-align: center !important;
+            }
+            .flo-ref {
+                font-family: 'Space Grotesk', sans-serif !important;
+                font-size: 6pt !important;
+                font-weight: 700 !important;
+                text-transform: uppercase !important;
+                color: #000000 !important;
+                letter-spacing: 0.05em !important;
+                text-align: center !important;
+            }
         }
     </style>
 </head>
@@ -558,13 +588,17 @@
             return res;
         }
 
-        async function markJobDone(id, isTicketTable = false) {
-            const table = isTicketTable ? 'print_queue_tickets' : 'print_queue';
+        async function markJobDone(id, isTicketTable = false, isFloTable = false) {
+            let table = 'print_queue';
+            if (isTicketTable) table = 'print_queue_tickets';
+            if (isFloTable) table = 'print_queue_flo';
             await sbFetch(`${table}?id=eq.${id}`, 'PATCH', { status: 'done' });
         }
 
-        async function markJobPrinting(id, isTicketTable = false) {
-            const table = isTicketTable ? 'print_queue_tickets' : 'print_queue';
+        async function markJobPrinting(id, isTicketTable = false, isFloTable = false) {
+            let table = 'print_queue';
+            if (isTicketTable) table = 'print_queue_tickets';
+            if (isFloTable) table = 'print_queue_flo';
             await sbFetch(`${table}?id=eq.${id}`, 'PATCH', { status: 'printing' });
         }
 
@@ -604,6 +638,11 @@
                     try {
                         const data = JSON.parse(job.details);
                         displayName = `🏷️ Promo: ${data.reference} (${data.discount})`;
+                    } catch(e) {}
+                } else if (job.barcode === 'TICKET_FLO') {
+                    try {
+                        const data = JSON.parse(job.details);
+                        displayName = `🏷️ Flo: ${data.reference} (${data.price})`;
                     } catch(e) {}
                 } else {
                     displayName = `📦 ${job.details || job.barcode}`;
@@ -651,21 +690,30 @@
         async function executePrintJob(job) {
             // 1. Claim the job (mark as 'printing') to prevent other stations from taking it
             try {
-                await markJobPrinting(job.id, job.isTicketTable);
+                await markJobPrinting(job.id, job.isTicketTable, job.isFloTable);
             } catch(e) {
                 console.warn('Could not claim job', job.id, e);
                 // If we can't mark it, still try to print (best effort)
             }
 
-            // Detect if promo job
+            // Detect if promo job or flo job
             let isPromo = false;
             let promoData = null;
+            let isFlo = false;
+            let floData = null;
             if (job.barcode === 'TICKET_PROMO') {
                 isPromo = true;
                 try {
                     promoData = JSON.parse(job.details);
                 } catch(e) {
                     console.error('Failed to parse promo job details:', e);
+                }
+            } else if (job.barcode === 'TICKET_FLO') {
+                isFlo = true;
+                try {
+                    floData = JSON.parse(job.details);
+                } catch(e) {
+                    console.error('Failed to parse flo job details:', e);
                 }
             }
 
@@ -678,6 +726,10 @@
                 document.getElementById('job-details').textContent = `🏷️ Promo: ${promoData.reference} (${promoData.discount})`;
                 document.getElementById('job-qty').textContent = `${job.quantity} étiquette${job.quantity > 1 ? 's' : ''}`;
                 document.getElementById('job-barcode').textContent = `Ancien: ${formatPrice(promoData.old_price)} ➔ Nouveau: ${formatPrice(promoData.new_price)}`;
+            } else if (isFlo && floData) {
+                document.getElementById('job-details').textContent = `🏷️ Flo: ${floData.reference}`;
+                document.getElementById('job-qty').textContent = `${job.quantity} étiquette${job.quantity > 1 ? 's' : ''}`;
+                document.getElementById('job-barcode').textContent = `Prix: ${floData.price}`;
             } else {
                 document.getElementById('job-details').textContent = job.details;
                 document.getElementById('job-qty').textContent = `${job.quantity} étiquette${job.quantity > 1 ? 's' : ''}`;
@@ -714,6 +766,19 @@
                     label.appendChild(discountEl);
                     label.appendChild(newPriceEl);
                     label.appendChild(refEl);
+                } else if (isFlo && floData) {
+                    label.className = 'print-label flo-label';
+                    
+                    const priceEl = document.createElement('div');
+                    priceEl.className = 'flo-price';
+                    priceEl.textContent = floData.price;
+                    
+                    const refEl = document.createElement('div');
+                    refEl.className = 'flo-ref';
+                    refEl.textContent = floData.reference;
+                    
+                    label.appendChild(priceEl);
+                    label.appendChild(refEl);
                 } else {
                     label.className = 'print-label';
 
@@ -730,8 +795,8 @@
                 printZone.appendChild(label);
             }
 
-            // 4. Render barcodes (if not promo)
-            if (!isPromo) {
+            // 4. Render barcodes (if not promo and not flo)
+            if (!isPromo && !isFlo) {
                 for (let i = 0; i < job.quantity; i++) {
                     const barcodeOpts = {
                         width: 2, height: 55,
@@ -752,7 +817,7 @@
 
             // 6. Mark as done in Supabase (anti-doublon)
             try {
-                await markJobDone(job.id, job.isTicketTable);
+                await markJobDone(job.id, job.isTicketTable, job.isFloTable);
             } catch(e) {
                 console.error('Could not mark job done:', e);
             }
@@ -785,6 +850,11 @@
                 try {
                     const data = JSON.parse(job.details);
                     displayName = `🏷️ Promo: ${data.reference} (${data.discount})`;
+                } catch(e) {}
+            } else if (job.barcode === 'TICKET_FLO') {
+                try {
+                    const data = JSON.parse(job.details);
+                    displayName = `🏷️ Flo: ${data.reference} (${data.price})`;
                 } catch(e) {}
             }
 
@@ -835,6 +905,27 @@
                         enqueueJob(mappedJob);
                     }
                 }
+
+                // 3. Fetch from print_queue_flo (Flo articles)
+                const floJobs = await sbFetch('print_queue_flo?status=eq.pending&order=created_at.asc');
+                if (floJobs && floJobs.length > 0) {
+                    console.log(`${floJobs.length} job(s) Flo en attente trouvé(s) au démarrage.`);
+                    for (const job of floJobs) {
+                        const mappedJob = {
+                            id: job.id,
+                            barcode: 'TICKET_FLO',
+                            quantity: job.quantity,
+                            status: job.status,
+                            isFloTable: true,
+                            details: JSON.stringify({
+                                type: 'flo',
+                                price: job.price,
+                                reference: job.reference
+                            })
+                        };
+                        enqueueJob(mappedJob);
+                    }
+                }
             } catch(e) {
                 console.error('Erreur vérification jobs au démarrage:', e);
                 // Reset flag on error to allow retry
@@ -875,6 +966,28 @@
                             old_price: job.old_price,
                             new_price: job.new_price,
                             discount: job.discount,
+                            reference: job.reference
+                        })
+                    };
+                    enqueueJob(mappedJob);
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'print_queue_flo' },
+                (payload) => {
+                    const job = payload.new;
+                    if (job.status !== 'pending') return;
+                    console.log('Nouveau job Flo reçu via Realtime:', job);
+                    const mappedJob = {
+                        id: job.id,
+                        barcode: 'TICKET_FLO',
+                        quantity: job.quantity,
+                        status: job.status,
+                        isFloTable: true,
+                        details: JSON.stringify({
+                            type: 'flo',
+                            price: job.price,
                             reference: job.reference
                         })
                     };

@@ -426,11 +426,47 @@ function getBrandLogo(brandName) {
 }
 
 // Global Print Action Handler (exposed to window for inline onclick attributes)
-window.handlePrintArticle = function(gencod, ref, color, size, brand) {
-    const formattedRef = String(ref || "").trim().toUpperCase().replace(/\s+/g, '_');
-    console.log(`[Flo UI] Printing article: Gencod: ${gencod}, Ref: ${formattedRef}, Color: ${color}, Size: ${size}, Brand: ${brand}`);
-    // Placeholders - we will configure this in the next step
-    showToast(`IMPRESSION DEMANDÉE : ${formattedRef}`, 'success');
+window.handlePrintArticle = async function(btn, gencod, ref, color, size, brand, price) {
+    if (!btn) return;
+    const formattedRef = String(ref || "").trim().toUpperCase();
+    const formattedPrice = formatPrice(price) + " DZD";
+    
+    console.log(`[Flo UI] Printing article: Gencod: ${gencod}, Ref: ${formattedRef}, Color: ${color}, Size: ${size}, Brand: ${brand}, Price: ${formattedPrice}`);
+    
+    // Save original button content
+    const originalContent = btn.innerHTML;
+    
+    // Set loading state
+    btn.disabled = true;
+    btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> ENVOI...`;
+    
+    try {
+        const res = await fetch(`${window.SUPABASE_URL}/rest/v1/print_queue_flo`, {
+            method: 'POST',
+            headers: {
+                'apikey': window.SUPABASE_KEY,
+                'Authorization': `Bearer ${window.SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=minimal'
+            },
+            body: JSON.stringify({
+                price: formattedPrice,
+                reference: formattedRef,
+                quantity: 1,
+                status: 'pending'
+            })
+        });
+        
+        if (!res.ok) throw new Error(`Status: ${res.status}`);
+        
+        showToast(`TICKET ENVOYÉ : ${formattedRef}`, 'success');
+    } catch (err) {
+        console.error('[Flo UI] Print error:', err);
+        showToast('ÉCHEC DE L\'ENVOI D\'IMPRESSION', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+    }
 };
 
 // Toast notification container
@@ -543,6 +579,7 @@ function renderResults(results) {
     resultsBodyMobile.innerHTML = results.map(item => {
         const isPromo = item.prix_reduit && item.prix_reduit < item.prix_tarif;
         const price = { tarif: item.prix_tarif || 0, reduit: isPromo ? item.prix_reduit : null };
+        const activePrice = price.reduit ? price.reduit : price.tarif;
         
         const rawTitle = cleanStr(item.libelle);
         const formattedTitle = rawTitle ? rawTitle.toUpperCase().replace(/\s+/g, '_') : "ARTICLE_SANS_NOM";
@@ -616,7 +653,7 @@ function renderResults(results) {
                 </div>` : ''}
             </div>
             
-            <button onclick="handlePrintArticle('${item.gencod}', '${formattedRef}', '${couleur}', '${taille}', '${brand}')" class="w-full bg-primary-container text-on-primary-container py-6 font-label-caps text-label-caps font-black uppercase hover:bg-white hover:text-black transition-colors flex items-center justify-center gap-2">
+            <button onclick="handlePrintArticle(this, '${item.gencod}', '${formattedRef}', '${couleur}', '${taille}', '${brand}', '${activePrice}')" class="w-full bg-primary-container text-on-primary-container py-6 font-label-caps text-label-caps font-black uppercase hover:bg-white hover:text-black transition-colors flex items-center justify-center gap-2">
                 <i data-lucide="printer" class="w-5 h-5"></i>
                 IMPRIMER
             </button>
