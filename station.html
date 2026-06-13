@@ -310,11 +310,16 @@
                 margin: 0; padding: 0;
                 background: #fff !important;
                 width: 35mm;
+                height: auto !important;
+                min-height: 0 !important;
+                overflow: visible !important;
             }
             body > *:not(#print-zone) { display: none !important; }
             #print-zone {
                 display: block !important;
                 width: 35mm;
+                height: auto !important;
+                overflow: visible !important;
             }
             .print-label {
                 width: 35mm; height: 35mm;
