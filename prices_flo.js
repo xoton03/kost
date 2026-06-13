@@ -11,10 +11,11 @@ let btnScan = null;
 
 // Price Formatting Helper (French style thousands dot separator)
 function formatPrice(val) {
-    if (val === undefined || val === null) return '--';
-    const num = parseFloat(String(val).replace(/[^0-9.-]/g, ''));
+    if (val === undefined || val === null || val === '') return '--';
+    const clean = String(val).replace(/[\.,\s]/g, '');
+    const num = parseFloat(clean);
     if (isNaN(num)) return val;
-    return new Intl.NumberFormat('fr-FR', { useGrouping: true }).format(num).replace(/\s/g, '.');
+    return Math.round(num).toString();
 }
 
 

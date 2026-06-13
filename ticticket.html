@@ -156,10 +156,11 @@
             color: #000;
             margin-bottom: 4px;
             line-height: 1.1;
+            text-decoration: underline;
         }
         
         .preview-ref {
-            font-size: 0.85rem;
+            font-size: 1.2rem;
             font-weight: 700;
             text-transform: uppercase;
             color: #000;
@@ -226,10 +227,11 @@
                 font-weight: 900;
                 color: #000;
                 margin-bottom: 0.5mm;
+                text-decoration: underline;
             }
             .promo-ref {
                 font-family: 'Space Grotesk', sans-serif;
-                font-size: 6pt;
+                font-size: 9pt;
                 font-weight: 700;
                 text-transform: uppercase;
                 color: #000;
@@ -467,9 +469,11 @@
 
         // Format price helper
         function formatPrice(val) {
-            if (!val || isNaN(val)) return '--.-- DA';
-            let s = parseFloat(val).toFixed(2);
-            return s + ' DA';
+            if (val === undefined || val === null || val === '') return '-- DA';
+            const clean = String(val).replace(/[\.,\s]/g, '');
+            const num = parseFloat(clean);
+            if (isNaN(num)) return '-- DA';
+            return Math.round(num).toString() + ' DA';
         }
 
         // Calculate and update fields

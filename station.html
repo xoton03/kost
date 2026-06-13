@@ -337,7 +337,7 @@
             .print-label svg { width: 35mm; max-width: 35mm; height: auto; display: block; }
             .print-ref {
                 font-family: 'Space Grotesk', sans-serif;
-                font-size: 5pt;
+                font-size: 8pt;
                 font-weight: 900;
                 text-transform: uppercase;
                 text-align: center;
@@ -386,10 +386,11 @@
                 font-weight: 900 !important;
                 color: #000000 !important;
                 margin-bottom: 0.5mm !important;
+                text-decoration: underline !important;
             }
             .promo-ref {
                 font-family: 'Space Grotesk', sans-serif !important;
-                font-size: 6pt !important;
+                font-size: 9pt !important;
                 font-weight: 700 !important;
                 text-transform: uppercase !important;
                 color: #000000 !important;
@@ -415,10 +416,11 @@
                 color: #000000 !important;
                 margin-bottom: 1.5mm !important;
                 text-align: center !important;
+                text-decoration: underline !important;
             }
             .flo-ref {
                 font-family: 'Space Grotesk', sans-serif !important;
-                font-size: 6pt !important;
+                font-size: 9pt !important;
                 font-weight: 700 !important;
                 text-transform: uppercase !important;
                 color: #000000 !important;
@@ -682,9 +684,11 @@
         // ============================================================
         // Format price helper
         function formatPrice(val) {
-            if (!val || isNaN(val)) return '--.-- DA';
-            let s = parseFloat(val).toFixed(2);
-            return s + ' DA';
+            if (val === undefined || val === null || val === '') return '-- DA';
+            const clean = String(val).replace(/[\.,\s]/g, '');
+            const num = parseFloat(clean);
+            if (isNaN(num)) return '-- DA';
+            return Math.round(num).toString() + ' DA';
         }
 
         async function executePrintJob(job) {
