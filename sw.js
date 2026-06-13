@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kost-v9.4';
+const CACHE_NAME = 'kost-v9.5';
 const urlsToCache = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const urlsToCache = [
   './sync.js',
   './navigation.js',
   './updater.js',
+  './prices_flo.js',
   './dexie.js',
   './lucide.js',
   './jsbarcode.js',
