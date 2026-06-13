@@ -212,52 +212,65 @@ async function getArticleByGencod(gencod) {
  * Search: Flexible search for Flo (Ref or Gencod)
  */
 async function searchArticles(query, limit = 50) {
+    console.log(`[DB] searchArticles called with query: "${query}", limit: ${limit}`);
     if (!query) return [];
     
     const cleanQuery = query.trim();
     const results = [];
     
-    // 1. If the query is numeric, search by gencod prefix
-    if (/^\d+$/.test(cleanQuery)) {
-        let gencodMatches = await db.catalogue_articles
-            .where('gencod')
-            .startsWith(cleanQuery)
-            .limit(limit)
-            .toArray();
+    try {
+        // 1. If the query is numeric, search by gencod prefix
+        if (/^\d+$/.test(cleanQuery)) {
+            console.log(`[DB] Query is numeric. Searching gencod prefix for: "${cleanQuery}"`);
+            let gencodMatches = await db.catalogue_articles
+                .where('gencod')
+                .startsWith(cleanQuery)
+                .limit(limit)
+                .toArray();
+                
+            console.log(`[DB] Found ${gencodMatches.length} gencod matches.`);
+            results.push(...gencodMatches);
             
-        results.push(...gencodMatches);
+            // Handle potential leading zero truncation from bigint database types
+            if (results.length === 0 && cleanQuery.startsWith('0')) {
+                const strippedQuery = cleanQuery.replace(/^0+/, '');
+                if (strippedQuery.length > 0) {
+                    console.log(`[DB] No matches, but query starts with 0. Stripping 0s and trying: "${strippedQuery}"`);
+                    gencodMatches = await db.catalogue_articles
+                        .where('gencod')
+                        .startsWith(strippedQuery)
+                        .limit(limit)
+                        .toArray();
+                    console.log(`[DB] Stripped query found ${gencodMatches.length} matches.`);
+                    results.push(...gencodMatches);
+                }
+            }
+        }
         
-        // Handle potential leading zero truncation from bigint database types
-        if (results.length === 0 && cleanQuery.startsWith('0')) {
-            const strippedQuery = cleanQuery.replace(/^0+/, '');
-            if (strippedQuery.length > 0) {
-                gencodMatches = await db.catalogue_articles
-                    .where('gencod')
-                    .startsWith(strippedQuery)
-                    .limit(limit)
-                    .toArray();
-                results.push(...gencodMatches);
+        // 2. If results are still below the limit, search by reference prefix
+        if (results.length < limit) {
+            console.log(`[DB] Results count (${results.length}) is below limit (${limit}). Searching ref_article startsWithIgnoreCase for: "${cleanQuery}"`);
+            const refMatches = await db.catalogue_articles
+                .where('ref_article')
+                .startsWithIgnoreCase(cleanQuery)
+                .limit(limit - results.length)
+                .toArray();
+                
+            console.log(`[DB] Found ${refMatches.length} ref matches.`);
+            // Avoid duplicates
+            for (const item of refMatches) {
+                if (!results.some(r => r.gencod === item.gencod)) {
+                    results.push(item);
+                }
             }
         }
+        
+        console.log(`[DB] searchArticles returning ${results.length} total unique results.`);
+        return results;
+    } catch (err) {
+        console.error(`[DB] Error in searchArticles for query "${query}":`, err);
+        throw err;
     }
-    
-    // 2. If results are still below the limit, search by reference prefix
-    if (results.length < limit) {
-        const refMatches = await db.catalogue_articles
-            .where('ref_article')
-            .startsWithIgnoreCase(cleanQuery)
-            .limit(limit - results.length)
-            .toArray();
-            
-        // Avoid duplicates
-        for (const item of refMatches) {
-            if (!results.some(r => r.gencod === item.gencod)) {
-                results.push(item);
-            }
-        }
-    }
-    
-    return results;
 }
 
 // Request persistence on load

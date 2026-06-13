@@ -4,10 +4,10 @@
  */
 
 // UI Elements
-const searchInput = document.getElementById('search-input');
-const resultsBodyDesktop = document.getElementById('results-body-desktop');
-const resultsBodyMobile = document.getElementById('results-body-mobile');
-const btnScan = document.getElementById('btn-scan');
+let searchInput = null;
+let resultsBodyDesktop = null;
+let resultsBodyMobile = null;
+let btnScan = null;
 
 // Price Formatting Helper (French style thousands dot separator)
 function formatPrice(val) {
@@ -467,9 +467,16 @@ function debouncedSearch() {
 }
 
 async function performSearch(force = false) {
+    if (!searchInput) {
+        console.error('[Flo UI] performSearch failed: searchInput is not initialized');
+        return;
+    }
     const query = searchInput.value.trim();
+    console.log(`[Flo UI] performSearch called. Query: "${query}", Force: ${force}`);
+    
     if (!query) {
-        resultsBodyMobile.innerHTML = '';
+        console.log('[Flo UI] Empty query. Clearing results.');
+        if (resultsBodyMobile) resultsBodyMobile.innerHTML = '';
         if (resultsBodyDesktop) resultsBodyDesktop.innerHTML = '';
         return;
     }
@@ -477,21 +484,30 @@ async function performSearch(force = false) {
     // Bypass length check if query is purely numeric (barcode) or if search is forced (e.g. Enter, camera scan)
     const isNumeric = /^\d+$/.test(query);
     if (!force && !isNumeric && query.length < 3) {
+        console.log('[Flo UI] Alphanumeric query too short (< 3 chars) and not forced. Bypassing search.');
         return;
     }
 
     try {
+        console.log(`[Flo UI] Querying database for: "${query}" (isNumeric: ${isNumeric})`);
         // Use shared search engine
         const results = await searchArticles(query);
+        console.log(`[Flo UI] Database returned ${results.length} results.`);
         renderResults(results);
     } catch (error) {
-        console.error('[Flo Search] Error:', error);
+        console.error('[Flo Search] Error during performSearch:', error);
     }
 }
 
 // Render Results (Lazy Display matching flo_screen.html markup)
 function renderResults(results) {
+    console.log('[Flo UI] Rendering results:', results);
+    if (!resultsBodyMobile) {
+        console.error('[Flo UI] renderResults failed: resultsBodyMobile is not initialized');
+        return;
+    }
     if (results.length === 0) {
+        console.log('[Flo UI] No results found. Displaying AUCUN_RESULTAT_TROUVE.');
         const noResultMobile = `<div class="col-span-full text-center py-12 text-slate-500 font-bold uppercase tracking-widest border border-dashed border-outline bg-surface">AUCUN_RESULTAT_TROUVE</div>`;
         resultsBodyMobile.innerHTML = noResultMobile;
         if (resultsBodyDesktop) resultsBodyDesktop.innerHTML = '';
@@ -591,24 +607,7 @@ function renderResults(results) {
     if (window.lucide) lucide.createIcons();
 }
 
-// Event Listeners
-searchInput.addEventListener('input', debouncedSearch);
-searchInput.addEventListener('change', () => {
-    if (searchTimeout) clearTimeout(searchTimeout);
-    performSearch(true);
-});
-searchInput.addEventListener('paste', () => {
-    if (searchTimeout) clearTimeout(searchTimeout);
-    setTimeout(() => performSearch(true), 50);
-});
-searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        if (searchTimeout) clearTimeout(searchTimeout);
-        performSearch(true);
-        e.target.blur();
-    }
-});
+// Event Listeners are registered inside DOMContentLoaded to ensure UI elements are fully loaded.
 
 // Barcode Scanner Integration with html5-qrcode
 let html5QrCode = null;
@@ -708,14 +707,59 @@ async function stopScanner() {
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('[Flo UI] DOMContentLoaded fired. Initializing elements and event listeners...');
+    
+    // Resolve UI Elements
+    searchInput = document.getElementById('search-input');
+    resultsBodyDesktop = document.getElementById('results-body-desktop');
+    resultsBodyMobile = document.getElementById('results-body-mobile');
+    btnScan = document.getElementById('btn-scan');
+
+    console.log('[Flo UI] Element resolution status:', {
+        searchInput: !!searchInput,
+        resultsBodyDesktop: !!resultsBodyDesktop,
+        resultsBodyMobile: !!resultsBodyMobile,
+        btnScan: !!btnScan
+    });
+
     // Clear results on load
-    resultsBodyMobile.innerHTML = '';
+    if (resultsBodyMobile) resultsBodyMobile.innerHTML = '';
     if (resultsBodyDesktop) resultsBodyDesktop.innerHTML = '';
     
+    // Bind Search Input Events
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            console.log('[Flo UI] Search Input "input" event fired.');
+            debouncedSearch();
+        });
+        searchInput.addEventListener('change', () => {
+            console.log('[Flo UI] Search Input "change" event fired.');
+            if (searchTimeout) clearTimeout(searchTimeout);
+            performSearch(true);
+        });
+        searchInput.addEventListener('paste', () => {
+            console.log('[Flo UI] Search Input "paste" event fired.');
+            if (searchTimeout) clearTimeout(searchTimeout);
+            setTimeout(() => performSearch(true), 50);
+        });
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                console.log('[Flo UI] Search Input "Enter" key pressed.');
+                e.preventDefault();
+                if (searchTimeout) clearTimeout(searchTimeout);
+                performSearch(true);
+                e.target.blur();
+            }
+        });
+    } else {
+        console.error('[Flo UI] CRITICAL: search-input element not found in DOM!');
+    }
+
     // Bind Scanner Buttons
     if (btnScan) {
         btnScan.addEventListener('click', (e) => {
             e.preventDefault();
+            console.log('[Flo UI] Scan button clicked.');
             startScanner();
         });
     }
