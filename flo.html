@@ -272,6 +272,59 @@
 
     <div id="toast-container" class="fixed bottom-4 right-4 z-[250] flex flex-col gap-2"></div>
 
+    <!-- Print Preview Modal Overlay -->
+    <div id="print-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[300] hidden flex flex-col items-center justify-center p-4 transition-opacity duration-300 opacity-0">
+        <div class="w-full max-w-sm bg-surface border border-outline rounded-2xl shadow-2xl overflow-hidden flex flex-col transform transition-transform duration-300 scale-95" id="print-modal-content">
+            
+            <div class="p-5 flex justify-between items-center border-b border-white/5 bg-white/5">
+                <h3 class="font-heading font-bold text-white uppercase tracking-wider text-sm flex items-center gap-2">
+                    <i data-lucide="printer" class="w-4 h-4 text-primary"></i>
+                    Impression
+                </h3>
+                <button id="btn-close-print-modal" class="text-slate-400 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-6 flex flex-col items-center gap-6">
+                <!-- Preview area representing a 35x35mm ticket -->
+                <div class="flex flex-col items-center justify-center bg-white shadow-inner mx-auto relative overflow-hidden" 
+                     style="width: 132px; height: 132px; padding: 10px; border-radius: 4px;">
+                    <div id="preview-price" class="font-heading font-black text-black text-3xl text-center underline mb-2 tracking-tighter">
+                        -- DA
+                    </div>
+                    <div id="preview-ref" class="font-heading font-bold text-black text-[10px] text-center uppercase tracking-wide">
+                        --
+                    </div>
+                </div>
+
+                <!-- Quantity selector -->
+                <div class="w-full flex flex-col gap-3">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-widest text-center">Nombre de tickets</label>
+                    <div class="flex items-center justify-center gap-4">
+                        <button id="btn-qty-minus" class="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 active:bg-white/20 border border-white/10 flex items-center justify-center text-white transition-colors">
+                            <i data-lucide="minus" class="w-5 h-5"></i>
+                        </button>
+                        <input type="number" id="print-qty-input" value="1" min="1" max="99" class="w-16 h-12 bg-transparent border-none text-center text-3xl font-bold text-white focus:ring-0 p-0 font-mono">
+                        <button id="btn-qty-plus" class="w-12 h-12 rounded-full bg-white/5 hover:bg-white/10 active:bg-white/20 border border-white/10 flex items-center justify-center text-white transition-colors">
+                            <i data-lucide="plus" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-white/5 bg-black/20 flex gap-3">
+                <button id="btn-cancel-print" class="flex-1 py-3 px-4 rounded-xl font-bold text-sm text-slate-300 bg-white/5 hover:bg-white/10 border border-white/10 transition-colors">
+                    ANNULER
+                </button>
+                <button id="btn-confirm-print" class="flex-1 py-3 px-4 rounded-xl font-bold text-sm text-black bg-primary hover:bg-orange-500 shadow-[0_0_15px_rgba(255,109,0,0.3)] transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    VALIDER
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Barcode Scanner Modal Overlay -->
     <div id="scanner-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[300] hidden flex flex-col items-center justify-center p-4">
         <button id="btn-close-scanner" class="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors active:scale-95 z-50 flex items-center justify-center bg-black/40 border border-outline w-12 h-12 rounded-lg" title="Fermer le scanner">

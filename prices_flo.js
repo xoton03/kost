@@ -426,59 +426,58 @@ function getBrandLogo(brandName) {
     }
 }
 
+// Modal state variables
+let currentPrintJob = null;
+
 // Global Print Action Handler (exposed to window for inline onclick attributes)
-window.handlePrintArticle = async function(btn, gencod, ref, color, size, brand, price) {
+window.handlePrintArticle = function(btn, gencod, ref, color, size, brand, price) {
     if (!btn) return;
     
-    const copiesInput = prompt(`Combien de tickets voulez-vous imprimer pour ${ref || "cet article"} ?`, "1");
-    if (copiesInput === null) return; // User cancelled
-    
-    const quantity = parseInt(copiesInput.trim(), 10);
-    if (isNaN(quantity) || quantity <= 0) {
-        showToast("QUANTITÉ INVALIDE", "error");
-        return;
-    }
-    
     const formattedRef = String(ref || "").trim().toUpperCase();
-    const formattedPrice = formatPrice(price) + " DZD";
+    const formattedPrice = formatPrice(price) + " DA";
     
-    console.log(`[Flo UI] Printing article: Gencod: ${gencod}, Ref: ${formattedRef}, Color: ${color}, Size: ${size}, Brand: ${brand}, Price: ${formattedPrice}, Qty: ${quantity}`);
+    // Set modal content
+    const previewPrice = document.getElementById('preview-price');
+    const previewRef = document.getElementById('preview-ref');
+    const qtyInput = document.getElementById('print-qty-input');
     
-    // Save original button content
-    const originalContent = btn.innerHTML;
+    if (previewPrice) previewPrice.textContent = formattedPrice;
+    if (previewRef) previewRef.textContent = formattedRef;
+    if (qtyInput) qtyInput.value = "1";
     
-    // Set loading state
-    btn.disabled = true;
-    btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> ENVOI...`;
+    // Store current job context
+    currentPrintJob = {
+        btn, gencod, ref: formattedRef, color, size, brand, formattedPrice
+    };
     
-    try {
-        const res = await fetch(`${window.SUPABASE_URL}/rest/v1/print_queue_flo`, {
-            method: 'POST',
-            headers: {
-                'apikey': window.SUPABASE_KEY,
-                'Authorization': `Bearer ${window.SUPABASE_KEY}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'return=minimal'
-            },
-            body: JSON.stringify({
-                price: formattedPrice,
-                reference: formattedRef,
-                quantity: quantity,
-                status: 'pending'
-            })
+    // Show modal
+    const modal = document.getElementById('print-modal');
+    const content = document.getElementById('print-modal-content');
+    if (modal && content) {
+        modal.classList.remove('hidden');
+        // Small delay to allow display:flex to apply before transition
+        requestAnimationFrame(() => {
+            modal.classList.remove('opacity-0');
+            content.classList.remove('scale-95');
+            content.classList.add('scale-100');
         });
-        
-        if (!res.ok) throw new Error(`Status: ${res.status}`);
-        
-        showToast(`${quantity} TICKET(S) ENVOYÉ(S) : ${formattedRef}`, 'success');
-    } catch (err) {
-        console.error('[Flo UI] Print error:', err);
-        showToast('ÉCHEC DE L\'ENVOI D\'IMPRESSION', 'error');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = originalContent;
     }
 };
+
+function closePrintModal() {
+    const modal = document.getElementById('print-modal');
+    const content = document.getElementById('print-modal-content');
+    if (modal && content) {
+        modal.classList.add('opacity-0');
+        content.classList.remove('scale-100');
+        content.classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300);
+    }
+    currentPrintJob = null;
+}
+
 
 // Toast notification container
 function showToast(message, type = 'success') {
@@ -857,6 +856,92 @@ document.addEventListener('DOMContentLoaded', () => {
         scannerModal.addEventListener('click', (e) => {
             if (e.target === scannerModal) {
                 stopScanner();
+            }
+        });
+    }
+    
+    // Setup Print Modal Events
+    const btnClosePrintModal = document.getElementById('btn-close-print-modal');
+    const btnCancelPrint = document.getElementById('btn-cancel-print');
+    const btnConfirmPrint = document.getElementById('btn-confirm-print');
+    const btnQtyMinus = document.getElementById('btn-qty-minus');
+    const btnQtyPlus = document.getElementById('btn-qty-plus');
+    const qtyInput = document.getElementById('print-qty-input');
+    const printModal = document.getElementById('print-modal');
+
+    if (btnClosePrintModal) btnClosePrintModal.addEventListener('click', closePrintModal);
+    if (btnCancelPrint) btnCancelPrint.addEventListener('click', closePrintModal);
+    
+    if (btnQtyMinus && qtyInput) {
+        btnQtyMinus.addEventListener('click', () => {
+            let val = parseInt(qtyInput.value) || 1;
+            if (val > 1) qtyInput.value = val - 1;
+        });
+    }
+    
+    if (btnQtyPlus && qtyInput) {
+        btnQtyPlus.addEventListener('click', () => {
+            let val = parseInt(qtyInput.value) || 1;
+            if (val < 99) qtyInput.value = val + 1;
+        });
+    }
+    
+    if (btnConfirmPrint) {
+        btnConfirmPrint.addEventListener('click', async () => {
+            if (!currentPrintJob) return;
+            
+            const quantity = parseInt(qtyInput.value, 10);
+            if (isNaN(quantity) || quantity <= 0) {
+                showToast("QUANTITÉ INVALIDE", "error");
+                return;
+            }
+            
+            const { btn, gencod, ref, formattedPrice } = currentPrintJob;
+            
+            // Close modal immediately
+            closePrintModal();
+            
+            console.log(`[Flo UI] Printing article: Gencod: ${gencod}, Ref: ${ref}, Price: ${formattedPrice}, Qty: ${quantity}`);
+            
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> ENVOI...`;
+            
+            try {
+                const res = await fetch(`${window.SUPABASE_URL}/rest/v1/print_queue_flo`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': window.SUPABASE_KEY,
+                        'Authorization': `Bearer ${window.SUPABASE_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=minimal'
+                    },
+                    body: JSON.stringify({
+                        price: formattedPrice,
+                        reference: ref,
+                        quantity: quantity,
+                        status: 'pending'
+                    })
+                });
+                
+                if (!res.ok) throw new Error(`Status: ${res.status}`);
+                
+                showToast(`${quantity} TICKET(S) ENVOYÉ(S) : ${ref}`, 'success');
+            } catch (err) {
+                console.error('[Flo UI] Print error:', err);
+                showToast('ÉCHEC DE L\'ENVOI D\'IMPRESSION', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        });
+    }
+    
+    // Close modal on click outside
+    if (printModal) {
+        printModal.addEventListener('click', (e) => {
+            if (e.target === printModal) {
+                closePrintModal();
             }
         });
     }
