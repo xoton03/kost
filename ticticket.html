@@ -341,16 +341,16 @@
                     <input type="text" id="new-price" class="tt-input" placeholder="ex: 34.99" autocomplete="off" inputmode="decimal">
                 </div>
 
+                <!-- Référence -->
+                <div class="space-y-2">
+                    <label for="ref-code" class="tt-label">Référence</label>
+                    <input type="text" id="ref-code" class="tt-input" placeholder="ex: REF-12345" autocomplete="off" style="text-transform: uppercase;">
+                </div>
+
                 <!-- Pourcentage de remise (calculé) -->
                 <div class="space-y-2">
                     <label for="discount-pct" class="tt-label">Remise calculée</label>
                     <input type="text" id="discount-pct" class="tt-input bg-[#0d0d0d] border-red-900/20 text-rose-400 font-extrabold cursor-not-allowed select-none" readonly placeholder="--- %">
-                </div>
-
-                <!-- Référence -->
-                <div class="space-y-2">
-                    <label for="ref-code" class="tt-label">Référence</label>
-                    <input type="text" id="ref-code" class="tt-input" placeholder="ex: REF-12345" autocomplete="off">
                 </div>
             </form>
         </div>
@@ -471,7 +471,10 @@
         // Event listeners for real-time updates
         oldPriceInput.addEventListener('input', updateLogic);
         newPriceInput.addEventListener('input', updateLogic);
-        refInput.addEventListener('input', updateLogic);
+        refInput.addEventListener('input', () => {
+            refInput.value = refInput.value.toUpperCase();
+            updateLogic();
+        });
 
         // Quantity +/- Buttons
         document.getElementById('btn-qty-minus').addEventListener('click', () => {
@@ -482,6 +485,15 @@
             const val = parseInt(qtyInput.value) || 1;
             if (val < 100) qtyInput.value = val + 1;
         });
+
+        function resetForm() {
+            oldPriceInput.value = '';
+            newPriceInput.value = '';
+            refInput.value = '';
+            discountInput.value = '';
+            qtyInput.value = '1';
+            updateLogic();
+        }
 
         // LOCAL PRINT
         document.getElementById('btn-print').addEventListener('click', () => {
@@ -531,6 +543,7 @@
             }
 
             window.print();
+            resetForm();
         });
 
         // REMOTE PRINT
@@ -577,8 +590,7 @@
                 if (!res.ok) throw new Error(`Supabase response error: ${res.status}`);
 
                 showToast(`⚡ Ordre de solde envoyé ! (${qty} copie${qty > 1 ? 's' : ''})`, 'success');
-                
-                // Optional: Clear form or keep it for ease of successive prints
+                resetForm();
             } catch (err) {
                 console.error('Remote print error:', err);
                 showToast('Erreur d\'envoi à la station d\'impression', 'error');
