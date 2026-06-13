@@ -508,9 +508,26 @@ function renderResults(results) {
     }
     if (results.length === 0) {
         console.log('[Flo UI] No results found. Displaying AUCUN_RESULTAT_TROUVE.');
-        const noResultMobile = `<div class="col-span-full text-center py-12 text-slate-500 font-bold uppercase tracking-widest border border-dashed border-outline bg-surface">AUCUN_RESULTAT_TROUVE</div>`;
+        
+        const noResultMobile = `
+        <div class="col-span-full text-center py-16 text-slate-500 font-bold uppercase tracking-widest border border-dashed border-outline bg-surface flex flex-col items-center justify-center gap-3">
+            <span>AUCUN_RESULTAT_TROUVE</span>
+            <div id="search-db-empty-warning" class="hidden text-xs text-red-500 font-heading font-medium mt-2 max-w-md bg-red-950/20 border border-red-900/30 px-4 py-2 rounded">
+                AVERTISSEMENT : La base de données locale est vide. Ouvrez le menu de gauche et lancez une synchronisation (Nouvelle Sync).
+            </div>
+        </div>`;
         resultsBodyMobile.innerHTML = noResultMobile;
         if (resultsBodyDesktop) resultsBodyDesktop.innerHTML = '';
+        
+        // Asynchronously check if the DB is empty to display a warning
+        if (typeof db !== 'undefined' && db.catalogue_articles) {
+            db.catalogue_articles.count().then(count => {
+                const warningEl = document.getElementById('search-db-empty-warning');
+                if (count === 0 && warningEl) {
+                    warningEl.classList.remove('hidden');
+                }
+            }).catch(err => console.error('[Flo UI] Error counting articles:', err));
+        }
         return;
     }
 
@@ -781,6 +798,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    updateLocalCountBadge();
+    setInterval(updateLocalCountBadge, 5000);
+    
     console.log('[Flo UI] Initialized with shared database and camera barcode scanner.');
 });
+
+async function updateLocalCountBadge() {
+    const badge = document.getElementById('local-db-count-badge');
+    if (!badge) return;
+    try {
+        if (typeof db !== 'undefined' && db.catalogue_articles) {
+            const count = await db.catalogue_articles.count();
+            if (count > 0) {
+                badge.textContent = `${count.toLocaleString()} articles chargés`;
+                badge.className = "text-[11px] text-green-400 font-bold uppercase tracking-wider bg-green-950/20 px-3 py-1 rounded border border-green-500/20";
+            } else {
+                badge.textContent = "Base vide - Veuillez synchroniser";
+                badge.className = "text-[11px] text-red-400 font-bold uppercase tracking-wider bg-red-950/20 px-3 py-1 rounded border border-red-500/20";
+            }
+        } else {
+            badge.textContent = "Base de données indisponible";
+            badge.className = "text-[11px] text-yellow-400 font-bold uppercase tracking-wider bg-yellow-950/20 px-3 py-1 rounded border border-yellow-500/20";
+        }
+    } catch (err) {
+        console.error('[Flo UI] Failed to count database articles:', err);
+        badge.textContent = "Erreur de base de données";
+        badge.className = "text-[11px] text-red-500 font-bold uppercase tracking-wider bg-red-950/30 px-3 py-1 rounded border border-red-500/40";
+    }
+}
 
