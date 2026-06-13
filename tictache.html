@@ -505,17 +505,22 @@
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 3000);
-            const res = await fetch(`${SUPABASE_URL}/rest/v1/`, {
-                method: 'HEAD',
-                headers: { 'apikey': SUPABASE_KEY },
+            // Query a lightweight row from base_flo which is CORS-allowed and highly optimized
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/base_flo?limit=1`, {
+                method: 'GET',
+                headers: { 
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': `Bearer ${SUPABASE_KEY}`
+                },
                 signal: controller.signal
             });
             clearTimeout(timeoutId);
-            const online = res.ok || res.status === 404;
+            const online = res.ok;
             isAppOnline = online;
             updateConnectionStatusUI(online);
             return online;
         } catch (e) {
+            console.warn("[Connectivity] Connection check failed:", e);
             isAppOnline = false;
             updateConnectionStatusUI(false);
             return false;
