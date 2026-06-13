@@ -349,6 +349,11 @@
         </div>
 
         <div class="flex items-center gap-3">
+            <!-- Connection status indicator -->
+            <div id="net-status" class="flex items-center gap-1.5 px-2 py-1 rounded border border-slate-700 bg-slate-800 text-[9px] font-bold text-slate-400 uppercase tracking-widest transition-all">
+                <span class="w-1.5 h-1.5 rounded-full bg-slate-500 animate-pulse"></span>
+                <span>Détection...</span>
+            </div>
             <div class="px-2 py-1 rounded border border-yellow-400/30 bg-yellow-400/10 text-[9px] font-bold text-yellow-400 uppercase tracking-widest">
                 Term. Mobile
             </div>
@@ -485,6 +490,142 @@
         return res.json();
     }
 
+    // ============================================================
+    // CONNECTIVITY STATUS ENGINE
+    // ============================================================
+    let isAppOnline = navigator.onLine;
+    const netStatusEl = document.getElementById('net-status');
+
+    async function checkConnectivity() {
+        if (!navigator.onLine) {
+            isAppOnline = false;
+            updateConnectionStatusUI(false);
+            return false;
+        }
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+                method: 'HEAD',
+                headers: { 'apikey': SUPABASE_KEY },
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            const online = res.ok || res.status === 404;
+            isAppOnline = online;
+            updateConnectionStatusUI(online);
+            return online;
+        } catch (e) {
+            isAppOnline = false;
+            updateConnectionStatusUI(false);
+            return false;
+        }
+    }
+
+    function updateConnectionStatusUI(online) {
+        if (!netStatusEl) return;
+        if (online) {
+            netStatusEl.className = "flex items-center gap-1.5 px-2 py-1 rounded border border-emerald-500/30 bg-emerald-500/10 text-[9px] font-bold text-emerald-400 uppercase tracking-widest transition-all";
+            netStatusEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span><span>EN LIGNE</span>`;
+        } else {
+            netStatusEl.className = "flex items-center gap-1.5 px-2 py-1 rounded border border-amber-500/30 bg-amber-500/10 text-[9px] font-bold text-amber-500 uppercase tracking-widest transition-all";
+            netStatusEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span>HORS LIGNE</span>`;
+        }
+    }
+
+    // Trigger initial check
+    checkConnectivity();
+
+    // Event listeners for window connectivity events
+    window.addEventListener('online', () => checkConnectivity());
+    window.addEventListener('offline', () => {
+        isAppOnline = false;
+        updateConnectionStatusUI(false);
+    });
+
+    // Check periodically
+    setInterval(checkConnectivity, 10000);
+
+    // ============================================================
+    // DYNAMIC SEARCH WRAPPERS (ONLINE WITH OFFLINE FALLBACK)
+    // ============================================================
+    async function getColorsWithFallback(ref) {
+        await checkConnectivity();
+        if (isAppOnline) {
+            try {
+                console.log(`[Search] Querying Supabase for colors of ref: ${ref}`);
+                const data = await supabaseFetch('base_flo', 'Couleur', { 'Ref': ref });
+                const colors = [...new Set(data.map(item => item.Couleur))].filter(Boolean).sort();
+                if (colors.length > 0) {
+                    showToast('Données chargées depuis le serveur', 'success');
+                    return colors;
+                }
+            } catch (err) {
+                console.warn('[Search] Supabase query failed, falling back to local DB:', err);
+                showToast('Réseau instable, bascule sur la base locale', 'error');
+            }
+        }
+        console.log(`[Search] Querying Local DB for colors of ref: ${ref}`);
+        const colors = await getColors(ref);
+        if (colors && colors.length > 0) {
+            showToast('Données chargées localement', 'info');
+            return colors;
+        }
+        return [];
+    }
+
+    async function getSizesWithFallback(ref, color) {
+        await checkConnectivity();
+        if (isAppOnline) {
+            try {
+                console.log(`[Search] Querying Supabase for sizes of ref: ${ref}, color: ${color}`);
+                const data = await supabaseFetch('base_flo', 'Taille', { 'Ref': ref, 'Couleur': color });
+                const sizes = [...new Set(data.map(item => item.Taille))].filter(Boolean).sort();
+                if (sizes.length > 0) return sizes;
+            } catch (err) {
+                console.warn('[Search] Supabase query failed, falling back to local DB:', err);
+            }
+        }
+        console.log(`[Search] Querying Local DB for sizes of ref: ${ref}, color: ${color}`);
+        return await getSizes(ref, color);
+    }
+
+    async function getArticleWithFallback(ref, color, size) {
+        await checkConnectivity();
+        if (isAppOnline) {
+            try {
+                console.log(`[Search] Querying Supabase for article of ref: ${ref}, color: ${color}, size: ${size}`);
+                const data = await supabaseFetch('base_flo', '*', { 'Ref': ref, 'Couleur': color, 'Taille': size });
+                if (data && data.length > 0) {
+                    const item = data[0];
+                    return {
+                        gencod: String(item['Code-barres article'] || "").trim(),
+                        ref_article: String(item['Ref'] || "").trim().toUpperCase(),
+                        libelle: String(item["Nom de l'article"] || 'ARTICLE').trim(),
+                        prix_tarif: item['Prix'] || null,
+                        prix_reduit: item['Prix solde'] || null,
+                        brand: String(item['Brand'] || "").trim().toUpperCase(),
+                        type_article: String(item["Type de l'article"] || "").trim().toUpperCase(),
+                        taille: String(item['Taille'] || "").trim().toUpperCase(),
+                        couleur: String(item['Couleur'] || "").trim().toUpperCase(),
+                        marche: String(item['March'] || "").trim().toUpperCase(),
+                        genre: String(item["Genre de l'article"] || "").trim().toUpperCase(),
+                        groupe: String(item["Groupe de l'article"] || "").trim().toUpperCase(),
+                        collection: String(item['March'] || "").trim().toUpperCase()
+                    };
+                }
+            } catch (err) {
+                console.warn('[Search] Supabase query failed, falling back to local DB:', err);
+            }
+        }
+        console.log(`[Search] Querying Local DB for article of ref: ${ref}, color: ${color}, size: ${size}`);
+        const article = await getArticle(ref, color, size);
+        if (article && !article.collection) {
+            article.collection = article.marche || '';
+        }
+        return article;
+    }
+
 
     // ============================================================
     // TOAST
@@ -537,7 +678,7 @@
         refLoader.classList.remove('hidden');
         ttRef.blur();
         try {
-            const colors = await getColors(val);
+            const colors = await getColorsWithFallback(val);
             if (colors && colors.length > 0) {
                 ttColor.innerHTML = '<option value="">Choisir une couleur...</option>';
                 colors.forEach(c => ttColor.innerHTML += `<option value="${c}">${c}</option>`);
@@ -547,10 +688,10 @@
                 currentRef = val;
                 setStep(2);
             } else {
-                showToast('Référence introuvable localement', 'error');
+                showToast('Référence introuvable', 'error');
             }
         } catch (err) {
-            showToast('Erreur recherche locale', 'error');
+            showToast('Erreur de recherche', 'error');
         } finally {
             refLoader.classList.add('hidden');
         }
@@ -560,7 +701,7 @@
         const color = e.target.value;
         if (!color) { groupSize.classList.add('hidden'); return; }
         try {
-            const sizes = await getSizes(currentRef, color);
+            const sizes = await getSizesWithFallback(currentRef, color);
             if (sizes && sizes.length > 0) {
                 ttSize.innerHTML = '<option value="">Choisir une taille...</option>';
                 sizes.forEach(s => ttSize.innerHTML += `<option value="${s}">${s}</option>`);
@@ -569,7 +710,7 @@
                 setStep(3);
             }
         } catch (err) {
-            showToast('Erreur recherche locale', 'error');
+            showToast('Erreur de recherche', 'error');
         }
     });
 
@@ -577,7 +718,7 @@
         const size = e.target.value;
         if (!size) return;
         try {
-            const article = await getArticle(currentRef, ttColor.value, size);
+            const article = await getArticleWithFallback(currentRef, ttColor.value, size);
 
             if (article) {
                 currentBarcode = article.gencod;
@@ -593,7 +734,7 @@
                 showToast('Article introuvable', 'error');
             }
         } catch (err) {
-            showToast('Erreur recherche locale', 'error');
+            showToast('Erreur de recherche', 'error');
         }
     });
 
