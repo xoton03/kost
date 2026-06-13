@@ -425,10 +425,12 @@ function getBrandLogo(brandName) {
     }
 }
 
-// Global Manifest Action Handler (exposed to window for inline onclick attributes)
-window.handleAddToManifest = function(ref, name) {
+// Global Print Action Handler (exposed to window for inline onclick attributes)
+window.handlePrintArticle = function(gencod, ref, color, size, brand) {
     const formattedRef = String(ref || "").trim().toUpperCase().replace(/\s+/g, '_');
-    showToast(`ADDED_${formattedRef}_TO_MANIFEST`, 'success');
+    console.log(`[Flo UI] Printing article: Gencod: ${gencod}, Ref: ${formattedRef}, Color: ${color}, Size: ${size}, Brand: ${brand}`);
+    // Placeholders - we will configure this in the next step
+    showToast(`IMPRESSION DEMANDÉE : ${formattedRef}`, 'success');
 };
 
 // Toast notification container
@@ -614,8 +616,9 @@ function renderResults(results) {
                 </div>` : ''}
             </div>
             
-            <button onclick="handleAddToManifest('${formattedRef}', '${formattedTitle}')" class="w-full bg-primary-container text-on-primary-container py-6 font-label-caps text-label-caps font-black uppercase hover:bg-white hover:text-black transition-colors">
-                ADD_TO_MANIFEST
+            <button onclick="handlePrintArticle('${item.gencod}', '${formattedRef}', '${couleur}', '${taille}', '${brand}')" class="w-full bg-primary-container text-on-primary-container py-6 font-label-caps text-label-caps font-black uppercase hover:bg-white hover:text-black transition-colors flex items-center justify-center gap-2">
+                <i data-lucide="printer" class="w-5 h-5"></i>
+                IMPRIMER
             </button>
         </section>
         `;
