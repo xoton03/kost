@@ -273,6 +273,12 @@
             #label-preview-container {
                 margin: 0 auto;
             }
+            #label-preview-wrapper {
+                display: none !important;
+            }
+            #btn-print {
+                display: none !important;
+            }
         }
     </style>
 </head>
@@ -358,7 +364,7 @@
         <!-- RIGHT: Preview & Print Actions -->
         <div class="tt-barcode-section">
             <!-- Label Preview Area -->
-            <div class="flex flex-col items-center gap-2">
+            <div id="label-preview-wrapper" class="flex flex-col items-center gap-2">
                 <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Aperçu de l'étiquette (35 x 35 mm)</span>
                 <div id="label-preview-container">
                     <div class="promo-preview-label" id="promo-preview-label">
