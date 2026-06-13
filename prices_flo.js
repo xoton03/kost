@@ -644,8 +644,15 @@ async function startScanner() {
     
     try {
         if (!html5QrCode) {
-            // Instantiate with the scanner-reader div ID
-            html5QrCode = new Html5Qrcode("scanner-reader");
+            // Instantiate with scanner-reader and restrict formats to 1D barcodes for huge performance gain
+            html5QrCode = new Html5Qrcode("scanner-reader", {
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.CODE_128
+                ],
+                verbose: false
+            });
         }
         
         const qrCodeSuccessCallback = (decodedText, decodedResult) => {
@@ -662,15 +669,20 @@ async function startScanner() {
         };
         
         const config = {
-            fps: 15,
+            fps: 24, // Higher scan rate for faster detection
             qrbox: (width, height) => {
                 // Returns scan window dimensions optimized for linear barcodes
                 return {
-                    width: Math.min(width * 0.85, 320),
-                    height: Math.min(height * 0.35, 140)
+                    width: Math.min(width * 0.9, 360),
+                    height: Math.min(height * 0.4, 150)
                 };
             },
-            aspectRatio: 1.333333
+            aspectRatio: 1.777778, // 16:9 aspect ratio activates high-res back camera on iOS Safari
+            videoConstraints: {
+                facingMode: "environment",
+                width: { min: 640, ideal: 1280, max: 1920 },
+                height: { min: 480, ideal: 720, max: 1080 }
+            }
         };
         
         await html5QrCode.start(
