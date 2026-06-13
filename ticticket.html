@@ -482,6 +482,28 @@
             updateLogic();
         });
 
+        // Keydown listeners for Enter key navigation
+        oldPriceInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                newPriceInput.focus();
+            }
+        });
+
+        newPriceInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                refInput.focus();
+            }
+        });
+
+        refInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('btn-remote-print').click();
+            }
+        });
+
         // Quantity +/- Buttons
         document.getElementById('btn-qty-minus').addEventListener('click', () => {
             const val = parseInt(qtyInput.value) || 1;
