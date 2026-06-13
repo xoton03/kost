@@ -428,10 +428,20 @@ function getBrandLogo(brandName) {
 // Global Print Action Handler (exposed to window for inline onclick attributes)
 window.handlePrintArticle = async function(btn, gencod, ref, color, size, brand, price) {
     if (!btn) return;
+    
+    const copiesInput = prompt(`Combien de tickets voulez-vous imprimer pour ${ref || "cet article"} ?`, "1");
+    if (copiesInput === null) return; // User cancelled
+    
+    const quantity = parseInt(copiesInput.trim(), 10);
+    if (isNaN(quantity) || quantity <= 0) {
+        showToast("QUANTITÉ INVALIDE", "error");
+        return;
+    }
+    
     const formattedRef = String(ref || "").trim().toUpperCase();
     const formattedPrice = formatPrice(price) + " DZD";
     
-    console.log(`[Flo UI] Printing article: Gencod: ${gencod}, Ref: ${formattedRef}, Color: ${color}, Size: ${size}, Brand: ${brand}, Price: ${formattedPrice}`);
+    console.log(`[Flo UI] Printing article: Gencod: ${gencod}, Ref: ${formattedRef}, Color: ${color}, Size: ${size}, Brand: ${brand}, Price: ${formattedPrice}, Qty: ${quantity}`);
     
     // Save original button content
     const originalContent = btn.innerHTML;
@@ -452,14 +462,14 @@ window.handlePrintArticle = async function(btn, gencod, ref, color, size, brand,
             body: JSON.stringify({
                 price: formattedPrice,
                 reference: formattedRef,
-                quantity: 1,
+                quantity: quantity,
                 status: 'pending'
             })
         });
         
         if (!res.ok) throw new Error(`Status: ${res.status}`);
         
-        showToast(`TICKET ENVOYÉ : ${formattedRef}`, 'success');
+        showToast(`${quantity} TICKET(S) ENVOYÉ(S) : ${formattedRef}`, 'success');
     } catch (err) {
         console.error('[Flo UI] Print error:', err);
         showToast('ÉCHEC DE L\'ENVOI D\'IMPRESSION', 'error');
