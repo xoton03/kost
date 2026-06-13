@@ -298,11 +298,12 @@ async function searchSupabase(query, limit = 50) {
     console.log(`[DB] Querying Supabase directly for: "${cleanQuery}"`);
     const isNumeric = /^\d+$/.test(cleanQuery);
     
+    const encodedQuery = encodeURIComponent(cleanQuery);
     let url = `${SUPABASE_URL}/rest/v1/base_flo?select=*&limit=${limit}`;
     if (isNumeric) {
-        url += `&or=(Code-barres article.eq.${cleanQuery},Ref.ilike.${cleanQuery}%)`;
+        url += `&or=("Code-barres article".eq.${encodedQuery},Ref.ilike.${encodedQuery}%)`;
     } else {
-        url += `&or=(Ref.ilike.${cleanQuery}%,Nom de l'article.ilike.%${cleanQuery}%,Brand.ilike.${cleanQuery}%)`;
+        url += `&or=(Ref.ilike.${encodedQuery}%,"Nom de l'article".ilike.%${encodedQuery}%,Brand.ilike.${encodedQuery}%)`;
     }
 
     try {
