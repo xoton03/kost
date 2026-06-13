@@ -217,59 +217,124 @@ async function searchArticles(query, limit = 50) {
     
     const cleanQuery = query.trim();
     const results = [];
+    const isOnline = navigator.onLine;
     
     try {
-        // 1. If the query is numeric, search by gencod prefix
-        if (/^\d+$/.test(cleanQuery)) {
-            console.log(`[DB] Query is numeric. Searching gencod prefix for: "${cleanQuery}"`);
-            let gencodMatches = await db.catalogue_articles
-                .where('gencod')
-                .startsWith(cleanQuery)
-                .limit(limit)
-                .toArray();
+        const localCount = await db.catalogue_articles.count();
+        console.log(`[DB] Local articles count: ${localCount}, Online status: ${isOnline}`);
+        
+        // 1. If local DB has items, search locally first (prioritizing speed)
+        if (localCount > 0) {
+            // -- LOCAL SEARCH --
+            // 1. If the query is numeric, search by gencod prefix
+            if (/^\d+$/.test(cleanQuery)) {
+                console.log(`[DB] Local search: Query is numeric. Searching gencod prefix: "${cleanQuery}"`);
+                let gencodMatches = await db.catalogue_articles
+                    .where('gencod')
+                    .startsWith(cleanQuery)
+                    .limit(limit)
+                    .toArray();
+                    
+                console.log(`[DB] Local search: Found ${gencodMatches.length} gencod matches.`);
+                results.push(...gencodMatches);
                 
-            console.log(`[DB] Found ${gencodMatches.length} gencod matches.`);
-            results.push(...gencodMatches);
+                // Handle potential leading zero truncation from bigint database types
+                if (results.length === 0 && cleanQuery.startsWith('0')) {
+                    const strippedQuery = cleanQuery.replace(/^0+/, '');
+                    if (strippedQuery.length > 0) {
+                        console.log(`[DB] Local search: No matches. Stripping 0s and trying: "${strippedQuery}"`);
+                        gencodMatches = await db.catalogue_articles
+                            .where('gencod')
+                            .startsWith(strippedQuery)
+                            .limit(limit)
+                            .toArray();
+                        console.log(`[DB] Local search: Stripped query found ${gencodMatches.length} matches.`);
+                        results.push(...gencodMatches);
+                    }
+                }
+            }
             
-            // Handle potential leading zero truncation from bigint database types
-            if (results.length === 0 && cleanQuery.startsWith('0')) {
-                const strippedQuery = cleanQuery.replace(/^0+/, '');
-                if (strippedQuery.length > 0) {
-                    console.log(`[DB] No matches, but query starts with 0. Stripping 0s and trying: "${strippedQuery}"`);
-                    gencodMatches = await db.catalogue_articles
-                        .where('gencod')
-                        .startsWith(strippedQuery)
-                        .limit(limit)
-                        .toArray();
-                    console.log(`[DB] Stripped query found ${gencodMatches.length} matches.`);
-                    results.push(...gencodMatches);
+            // 2. If results are still below the limit, search by reference prefix
+            if (results.length < limit) {
+                console.log(`[DB] Local search: Searching ref_article startsWithIgnoreCase: "${cleanQuery}"`);
+                const refMatches = await db.catalogue_articles
+                    .where('ref_article')
+                    .startsWithIgnoreCase(cleanQuery)
+                    .limit(limit - results.length)
+                    .toArray();
+                    
+                console.log(`[DB] Local search: Found ${refMatches.length} ref matches.`);
+                // Avoid duplicates
+                for (const item of refMatches) {
+                    if (!results.some(r => r.gencod === item.gencod)) {
+                        results.push(item);
+                    }
                 }
             }
         }
         
-        // 2. If results are still below the limit, search by reference prefix
-        if (results.length < limit) {
-            console.log(`[DB] Results count (${results.length}) is below limit (${limit}). Searching ref_article startsWithIgnoreCase for: "${cleanQuery}"`);
-            const refMatches = await db.catalogue_articles
-                .where('ref_article')
-                .startsWithIgnoreCase(cleanQuery)
-                .limit(limit - results.length)
-                .toArray();
-                
-            console.log(`[DB] Found ${refMatches.length} ref matches.`);
-            // Avoid duplicates
-            for (const item of refMatches) {
-                if (!results.some(r => r.gencod === item.gencod)) {
-                    results.push(item);
-                }
-            }
+        // 2. Fallback to Supabase search if we are online AND (local DB is empty OR local search returned 0 results)
+        if (isOnline && (localCount === 0 || results.length === 0)) {
+            console.log(`[DB] Online fallback: Local count is ${localCount} and results count is ${results.length}. Querying Supabase...`);
+            const supabaseResults = await searchSupabase(cleanQuery, limit);
+            results.push(...supabaseResults);
         }
         
-        console.log(`[DB] searchArticles returning ${results.length} total unique results.`);
+        console.log(`[DB] searchArticles returning ${results.length} total results.`);
         return results;
     } catch (err) {
         console.error(`[DB] Error in searchArticles for query "${query}":`, err);
         throw err;
+    }
+}
+
+/**
+ * Direct Supabase Search (fallback when local DB is empty or missing query)
+ */
+async function searchSupabase(query, limit = 50) {
+    const cleanQuery = query.trim();
+    if (!cleanQuery) return [];
+
+    console.log(`[DB] Querying Supabase directly for: "${cleanQuery}"`);
+    const isNumeric = /^\d+$/.test(cleanQuery);
+    
+    let url = `${SUPABASE_URL}/rest/v1/base_flo?select=*&limit=${limit}`;
+    if (isNumeric) {
+        url += `&or=(Code-barres article.eq.${cleanQuery},Ref.ilike.${cleanQuery}%)`;
+    } else {
+        url += `&or=(Ref.ilike.${cleanQuery}%,Nom de l'article.ilike.%${cleanQuery}%,Brand.ilike.${cleanQuery}%)`;
+    }
+
+    try {
+        const res = await fetch(url, {
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+        });
+        if (!res.ok) {
+            throw new Error(`Supabase returned status ${res.status}`);
+        }
+        const data = await res.json();
+        console.log(`[DB] Supabase search returned ${data.length} items.`);
+        
+        return data.map(item => ({
+            gencod: String(item['Code-barres article'] || "").trim(),
+            ref_article: String(item['Ref'] || "").trim().toUpperCase(),
+            libelle: String(item["Nom de l'article"] || 'ARTICLE').trim(),
+            prix_tarif: item['Prix'] || null,
+            prix_reduit: item['Prix solde'] || null,
+            brand: String(item['Brand'] || "").trim().toUpperCase(),
+            type_article: String(item["Type de l'article"] || "").trim().toUpperCase(),
+            taille: String(item['Taille'] || "").trim().toUpperCase(),
+            couleur: String(item['Couleur'] || "").trim().toUpperCase(),
+            marche: String(item['March'] || "").trim().toUpperCase(),
+            genre: String(item["Genre de l'article"] || "").trim().toUpperCase(),
+            groupe: String(item["Groupe de l'article"] || "").trim().toUpperCase()
+        }));
+    } catch (err) {
+        console.error('[DB] Failed to query Supabase directly:', err);
+        return [];
     }
 }
 
