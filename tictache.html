@@ -505,8 +505,8 @@
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 3000);
-            // Query a lightweight row from base_flo which is CORS-allowed and highly optimized
-            const res = await fetch(`${SUPABASE_URL}/rest/v1/base_flo?limit=1`, {
+            // Query a lightweight row from produits_kiabi which is CORS-allowed and highly optimized
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/produits_kiabi?limit=1`, {
                 method: 'GET',
                 headers: { 
                     'apikey': SUPABASE_KEY,
@@ -559,8 +559,8 @@
         if (isAppOnline) {
             try {
                 console.log(`[Search] Querying Supabase for colors of ref: ${ref}`);
-                const data = await supabaseFetch('base_flo', 'Couleur', { 'Ref': ref });
-                const colors = [...new Set(data.map(item => item.Couleur))].filter(Boolean).sort();
+                const data = await supabaseFetch('produits_kiabi', 'couleur', { 'code_article': ref });
+                const colors = [...new Set(data.map(item => item.couleur))].filter(Boolean).sort();
                 if (colors.length > 0) {
                     showToast('Données chargées depuis le serveur', 'success');
                     return colors;
@@ -584,8 +584,8 @@
         if (isAppOnline) {
             try {
                 console.log(`[Search] Querying Supabase for sizes of ref: ${ref}, color: ${color}`);
-                const data = await supabaseFetch('base_flo', 'Taille', { 'Ref': ref, 'Couleur': color });
-                const sizes = [...new Set(data.map(item => item.Taille))].filter(Boolean).sort();
+                const data = await supabaseFetch('produits_kiabi', 'taille', { 'code_article': ref, 'couleur': color });
+                const sizes = [...new Set(data.map(item => item.taille))].filter(Boolean).sort();
                 if (sizes.length > 0) return sizes;
             } catch (err) {
                 console.warn('[Search] Supabase query failed, falling back to local DB:', err);
@@ -600,23 +600,23 @@
         if (isAppOnline) {
             try {
                 console.log(`[Search] Querying Supabase for article of ref: ${ref}, color: ${color}, size: ${size}`);
-                const data = await supabaseFetch('base_flo', '*', { 'Ref': ref, 'Couleur': color, 'Taille': size });
+                const data = await supabaseFetch('produits_kiabi', '*', { 'code_article': ref, 'couleur': color, 'taille': size });
                 if (data && data.length > 0) {
                     const item = data[0];
                     return {
-                        gencod: String(item['Code-barres article'] || "").trim(),
-                        ref_article: String(item['Ref'] || "").trim().toUpperCase(),
-                        libelle: String(item["Nom de l'article"] || 'ARTICLE').trim(),
-                        prix_tarif: item['Prix'] || null,
-                        prix_reduit: item['Prix solde'] || null,
-                        brand: String(item['Brand'] || "").trim().toUpperCase(),
-                        type_article: String(item["Type de l'article"] || "").trim().toUpperCase(),
-                        taille: String(item['Taille'] || "").trim().toUpperCase(),
-                        couleur: String(item['Couleur'] || "").trim().toUpperCase(),
-                        marche: String(item['March'] || "").trim().toUpperCase(),
-                        genre: String(item["Genre de l'article"] || "").trim().toUpperCase(),
-                        groupe: String(item["Groupe de l'article"] || "").trim().toUpperCase(),
-                        collection: String(item['March'] || "").trim().toUpperCase()
+                        gencod: String(item['code_barres'] || "").trim(),
+                        ref_article: String(item['code_article'] || "").trim().toUpperCase(),
+                        libelle: 'ARTICLE',
+                        prix_tarif: null,
+                        prix_reduit: null,
+                        brand: '',
+                        type_article: '',
+                        taille: String(item['taille'] || "").trim().toUpperCase(),
+                        couleur: String(item['couleur'] || "").trim().toUpperCase(),
+                        marche: '',
+                        genre: '',
+                        groupe: String(item['groupe'] || "").trim().toUpperCase(),
+                        collection: String(item['collection'] || "").trim().toUpperCase()
                     };
                 }
             } catch (err) {
