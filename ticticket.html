@@ -73,6 +73,31 @@
         .tt-btn-print:hover { background: #e11d48; transform: translateY(-1px); }
         .tt-btn-print:active { transform: scale(0.98); }
         .tt-btn-print:disabled { background: #374151; color: #6b7280; cursor: not-allowed; transform: none; }
+
+        /* Remote print button slowly shifting gradient */
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        #btn-remote-print {
+            background: linear-gradient(-45deg, #F43F5E, #EC4899, #8B5CF6, #F43F5E);
+            background-size: 300% 300%;
+            animation: gradientShift 8s ease infinite;
+            transition: transform 0.2s, filter 0.2s;
+        }
+        #btn-remote-print:hover {
+            background: linear-gradient(-45deg, #F43F5E, #EC4899, #8B5CF6, #F43F5E);
+            background-size: 300% 300%;
+            transform: translateY(-1px);
+            filter: brightness(1.1);
+        }
+        #btn-remote-print:disabled {
+            background: #374151 !important;
+            animation: none !important;
+            filter: none !important;
+        }
         
         /* 35x35mm Label Preview */
         #label-preview-container {
