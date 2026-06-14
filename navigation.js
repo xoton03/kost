@@ -62,6 +62,56 @@ document.addEventListener('DOMContentLoaded', () => {
                 closeDrawer();
             }
         });
+
+        // Force Update Button Logic
+        const btnForceUpdate = document.getElementById('btn-force-update');
+        if (btnForceUpdate) {
+            btnForceUpdate.addEventListener('click', async (e) => {
+                e.preventDefault();
+                const icon = btnForceUpdate.querySelector('i');
+                if (icon) icon.classList.add('animate-spin');
+                
+                if ('serviceWorker' in navigator) {
+                    try {
+                        const reg = await navigator.serviceWorker.getRegistration();
+                        if (reg) {
+                            console.log('[Updater] Forcing update check...');
+                            await reg.update();
+                            
+                            // Check if there is a waiting worker after update
+                            if (reg.waiting) {
+                                if (window.kostUpdater) {
+                                    window.kostUpdater.showUpdateBanner(reg.waiting);
+                                } else {
+                                    reg.waiting.postMessage('SKIP_WAITING');
+                                }
+                            } else {
+                                if (typeof showToast === 'function') {
+                                    showToast("AUCUNE MISE À JOUR DISPONIBLE", "success");
+                                } else {
+                                    alert("AUCUNE MISE À JOUR DISPONIBLE");
+                                }
+                            }
+                        } else {
+                            if (typeof showToast === 'function') {
+                                showToast("SERVICE WORKER NON ENREGISTRÉ", "error");
+                            }
+                        }
+                    } catch (err) {
+                        console.error('[Updater] Force update error:', err);
+                        if (typeof showToast === 'function') {
+                            showToast("ERREUR DE MISE À JOUR", "error");
+                        }
+                    } finally {
+                        setTimeout(() => {
+                            if (icon) icon.classList.remove('animate-spin');
+                        }, 1000);
+                    }
+                } else {
+                    alert("Les Service Workers ne sont pas supportés sur ce navigateur.");
+                }
+            });
+        }
     }
 
     // ============================================================
