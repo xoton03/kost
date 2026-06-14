@@ -177,6 +177,128 @@
             <p class="text-xs text-gray-500 pl-1">Rechercher par code-barre ou référence article</p>
         </section>
 
+        <!-- Dashboard Home State -->
+        <div id="flo-dashboard" class="flex flex-col gap-6 w-full transition-all duration-300">
+            
+            <!-- Dynamic HUD Stat Cards -->
+            <div class="grid grid-cols-2 gap-4 w-full">
+                <!-- Card 1: Database Cache -->
+                <div class="border border-outline bg-surface p-4 flex flex-col gap-2 rounded-lg relative overflow-hidden group hover:border-primary/50 transition-all duration-300">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-all duration-300"></div>
+                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <i data-lucide="database" class="w-3.5 h-3.5 text-primary"></i>
+                        BASE ARTICLES
+                    </span>
+                    <div class="flex items-baseline gap-1 mt-1">
+                        <span id="dash-db-count" class="text-2xl font-heading font-black tracking-tight text-white">--</span>
+                        <span class="text-xs text-gray-400 font-medium">items</span>
+                    </div>
+                    <span id="dash-db-status-badge" class="text-[9px] font-bold uppercase tracking-wider bg-[#1A1A1A] text-slate-500 px-2 py-0.5 rounded border border-outline w-max">
+                        Chargement...
+                    </span>
+                </div>
+
+                <!-- Card 2: Last Sync -->
+                <div class="border border-outline bg-surface p-4 flex flex-col gap-2 rounded-lg relative overflow-hidden group hover:border-primary/50 transition-all duration-300">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-all duration-300"></div>
+                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-primary"></i>
+                        DERNIÈRE SYNC
+                    </span>
+                    <div class="flex items-baseline gap-1 mt-1">
+                        <span id="dash-sync-time" class="text-lg font-heading font-bold text-white tracking-tight">--</span>
+                    </div>
+                    <span class="text-[9px] text-gray-400 font-medium uppercase tracking-wider">
+                        Mise à jour en cache
+                    </span>
+                </div>
+            </div>
+
+            <!-- Brand Grid Shortcuts -->
+            <div class="border border-outline bg-surface rounded-lg p-5 flex flex-col gap-4 relative overflow-hidden">
+                <div class="flex items-center justify-between border-b border-outline pb-3">
+                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <i data-lucide="tag" class="w-3.5 h-3.5 text-primary"></i>
+                        MARQUES DE CHAUSSURES
+                    </span>
+                    <span class="text-[9px] text-gray-500 font-bold uppercase font-mono bg-[#1A1A1A] px-2 py-0.5 rounded border border-outline">
+                        RACCOURCIS
+                    </span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <button class="brand-shortcut-btn p-2 bg-black border border-outline rounded flex items-center justify-center h-12 hover:border-primary/60 hover:bg-[#1A1A1A]/40 transition-all active:scale-95 duration-200" data-brand="POLARIS" title="Rechercher POLARIS">
+                        POLARIS
+                    </button>
+                    <button class="brand-shortcut-btn p-2 bg-black border border-outline rounded flex items-center justify-center h-12 hover:border-primary/60 hover:bg-[#1A1A1A]/40 transition-all active:scale-95 duration-200" data-brand="KINETIX" title="Rechercher KINETIX">
+                        KINETIX
+                    </button>
+                    <button class="brand-shortcut-btn p-2 bg-black border border-outline rounded flex items-center justify-center h-12 hover:border-primary/60 hover:bg-[#1A1A1A]/40 transition-all active:scale-95 duration-200" data-brand="TOREX" title="Rechercher TOREX">
+                        TOREX
+                    </button>
+                    <button class="brand-shortcut-btn p-2 bg-black border border-outline rounded flex items-center justify-center h-12 hover:border-primary/60 hover:bg-[#1A1A1A]/40 transition-all active:scale-95 duration-200" data-brand="LUMBERJACK" title="Rechercher LUMBERJACK">
+                        LUMBERJACK
+                    </button>
+                    <button class="brand-shortcut-btn p-2 bg-black border border-outline rounded flex items-center justify-center h-12 hover:border-primary/60 hover:bg-[#1A1A1A]/40 transition-all active:scale-95 duration-200" data-brand="SEVENTEEN" title="Rechercher SEVENTEEN">
+                        SEVENTEEN
+                    </button>
+                    <button class="brand-shortcut-btn p-2 bg-black border border-outline rounded flex items-center justify-center h-12 hover:border-primary/60 hover:bg-[#1A1A1A]/40 transition-all active:scale-95 duration-200" data-brand="BUTIGO" title="Rechercher BUTIGO">
+                        BUTIGO
+                    </button>
+                    <button class="brand-shortcut-btn p-2 bg-black border border-outline rounded flex items-center justify-center h-12 hover:border-primary/60 hover:bg-[#1A1A1A]/40 transition-all active:scale-95 duration-200" data-brand="MISS F" title="Rechercher MISS F">
+                        MISS F
+                    </button>
+                    <button class="brand-shortcut-btn p-2 bg-black border border-outline rounded flex items-center justify-center h-12 hover:border-primary/60 hover:bg-[#1A1A1A]/40 transition-all active:scale-95 duration-200" data-brand="INCI" title="Rechercher INCI">
+                        INCI
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recent Searches Card -->
+            <div id="dash-recent-searches-card" class="border border-outline bg-surface rounded-lg p-5 flex flex-col gap-4 relative overflow-hidden hidden">
+                <div class="flex items-center justify-between border-b border-outline pb-3">
+                    <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <i data-lucide="history" class="w-3.5 h-3.5 text-primary"></i>
+                        RECHERCHES RÉCENTES
+                    </span>
+                    <button id="dash-btn-clear-recent" class="text-[9px] text-gray-400 hover:text-red-400 font-bold uppercase flex items-center gap-1 transition-colors">
+                        <i data-lucide="trash-2" class="w-3 h-3"></i>
+                        Effacer
+                    </button>
+                </div>
+                <div id="dash-recent-list" class="flex flex-col gap-2">
+                    <!-- Dynamic Items -->
+                </div>
+            </div>
+
+            <!-- Help Guide -->
+            <div class="border border-outline bg-surface rounded-lg p-5 flex flex-col gap-3 relative overflow-hidden group">
+                <div class="absolute inset-0 bg-[radial-gradient(#ff6d00_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.03]"></div>
+                <span class="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                    <i data-lucide="info" class="w-3.5 h-3.5 text-primary"></i>
+                    AIDE & ASTUCES DE RECHERCHE
+                </span>
+                
+                <div class="flex flex-col gap-3.5 mt-1 relative z-10">
+                    <div class="flex items-start gap-3">
+                        <div class="w-6 h-6 rounded bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5 text-primary font-mono text-xs font-bold">1</div>
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-white uppercase tracking-wide">Scanner de Code-barres</span>
+                            <span class="text-[11px] text-gray-400">Cliquez sur le bouton caméra en haut à droite pour ouvrir le scanner de codes-barres 1D standard. Idéal pour scanner les étiquettes de boîte.</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-start gap-3">
+                        <div class="w-6 h-6 rounded bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 mt-0.5 text-primary font-mono text-xs font-bold">2</div>
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-white uppercase tracking-wide">Recherche par Référence</span>
+                            <span class="text-[11px] text-gray-400">Vous pouvez taper le début d'une référence d'article (ex: 10123) pour rechercher dans la base de données hors-ligne synchronisée localement.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
         <!-- Results Grid -->
         <div id="results-body-mobile" class="grid grid-cols-1 md:grid-cols-2 gap-5 w-full">
             <!-- Empty State (shown before any search) -->

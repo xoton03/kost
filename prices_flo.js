@@ -8,6 +8,171 @@ let searchInput = null;
 let resultsBodyDesktop = null;
 let resultsBodyMobile = null;
 let btnScan = null;
+let floDashboard = null;
+
+// Relative Time Helper
+function getRelativeTimeString(timestamp) {
+    if (!timestamp) return 'JAMAIS';
+    const diffMs = Date.now() - parseInt(timestamp, 10);
+    const diffSec = Math.floor(diffMs / 1000);
+    if (diffSec < 60) return "À L'INSTANT";
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin} MIN`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr} H`;
+    const date = new Date(parseInt(timestamp, 10));
+    return date.toLocaleDateString('fr-FR', {
+        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+    }).toUpperCase();
+}
+
+// Toggle Dashboard State
+function toggleDashboard(show) {
+    floDashboard = document.getElementById('flo-dashboard');
+    resultsBodyMobile = document.getElementById('results-body-mobile');
+    
+    if (show) {
+        if (floDashboard) {
+            floDashboard.classList.remove('hidden');
+            renderDashboard();
+        }
+        if (resultsBodyMobile) resultsBodyMobile.classList.add('hidden');
+    } else {
+        if (floDashboard) floDashboard.classList.add('hidden');
+        if (resultsBodyMobile) resultsBodyMobile.classList.remove('hidden');
+    }
+}
+
+// Update Database & Sync Stats
+async function updateDashboardStats() {
+    const dashDbCount = document.getElementById('dash-db-count');
+    const dashDbStatusBadge = document.getElementById('dash-db-status-badge');
+    const dashSyncTime = document.getElementById('dash-sync-time');
+    
+    try {
+        if (typeof db !== 'undefined' && db.catalogue_articles) {
+            const count = await db.catalogue_articles.count();
+            if (dashDbCount) dashDbCount.textContent = count.toLocaleString();
+            if (dashDbStatusBadge) {
+                if (count > 0) {
+                    dashDbStatusBadge.textContent = 'PRÊT EN LOCAL';
+                    dashDbStatusBadge.className = "text-[9px] font-bold uppercase tracking-wider bg-green-950/20 text-green-400 px-2 py-0.5 rounded border border-green-500/20 w-max";
+                } else {
+                    dashDbStatusBadge.textContent = 'VIDE - À SYNCHRONISER';
+                    dashDbStatusBadge.className = "text-[9px] font-bold uppercase tracking-wider bg-red-950/20 text-red-400 px-2 py-0.5 rounded border border-red-500/20 w-max";
+                }
+            }
+        } else {
+            if (dashDbCount) dashDbCount.textContent = '--';
+            if (dashDbStatusBadge) {
+                dashDbStatusBadge.textContent = 'NON DISPONIBLE';
+                dashDbStatusBadge.className = "text-[9px] font-bold uppercase tracking-wider bg-yellow-950/20 text-yellow-400 px-2 py-0.5 rounded border border-yellow-500/20 w-max";
+            }
+        }
+    } catch (err) {
+        console.error('[Dashboard Stats] Database error:', err);
+        if (dashDbCount) dashDbCount.textContent = 'ERR';
+        if (dashDbStatusBadge) {
+            dashDbStatusBadge.textContent = 'ERREUR CACHE';
+            dashDbStatusBadge.className = "text-[9px] font-bold uppercase tracking-wider bg-red-950/30 text-red-500 px-2 py-0.5 rounded border border-red-500/40 w-max";
+        }
+    }
+
+    const lastSync = localStorage.getItem('kost_last_sync_timestamp');
+    if (dashSyncTime) {
+        dashSyncTime.textContent = lastSync ? getRelativeTimeString(lastSync) : 'JAMAIS';
+    }
+}
+
+// Render Dashboard History & Widgets
+function renderDashboard() {
+    updateDashboardStats();
+    
+    const recentCard = document.getElementById('dash-recent-searches-card');
+    const recentList = document.getElementById('dash-recent-list');
+    
+    if (recentCard && recentList) {
+        try {
+            const recents = JSON.parse(localStorage.getItem('kost_recent_searches')) || [];
+            if (recents.length > 0) {
+                recentCard.classList.remove('hidden');
+                recentList.innerHTML = recents.map(item => {
+                    const iconName = item.type === 'scan' ? 'scan-barcode' : 'search';
+                    return `
+                    <div class="flex items-center justify-between bg-black/40 border border-outline hover:border-primary/40 rounded p-2.5 transition-all duration-200 cursor-pointer active:scale-99 recent-item-row" data-query="${item.query}">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-7 h-7 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center shrink-0">
+                                <i data-lucide="${iconName}" class="w-3.5 h-3.5 text-primary"></i>
+                            </div>
+                            <div class="flex flex-col min-w-0">
+                                <span class="text-xs font-bold text-white truncate uppercase tracking-wide">${item.label}</span>
+                                <span class="text-[9px] text-gray-500 font-bold uppercase tracking-wider font-mono">REF: ${item.ref || 'INCONNUE'} • ${item.price} DA</span>
+                            </div>
+                        </div>
+                        <div class="text-[9px] text-gray-500 font-bold uppercase shrink-0 font-mono">
+                            ${getRelativeTimeString(item.timestamp)}
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+                
+                const rows = recentList.querySelectorAll('.recent-item-row');
+                rows.forEach(row => {
+                    row.addEventListener('click', () => {
+                        const query = row.dataset.query;
+                        if (searchInput) {
+                            searchInput.value = query;
+                            performSearch(true);
+                        }
+                    });
+                });
+                
+                if (window.lucide) window.lucide.createIcons();
+            } else {
+                recentCard.classList.add('hidden');
+                recentList.innerHTML = '';
+            }
+        } catch (e) {
+            console.error('[Dashboard Recent List] Failed to render:', e);
+            recentCard.classList.add('hidden');
+        }
+    }
+}
+
+// Add to History
+function addToRecentSearches(query, firstResult, type) {
+    if (!query) return;
+    try {
+        let recents = JSON.parse(localStorage.getItem('kost_recent_searches')) || [];
+        recents = recents.filter(item => item.query.trim().toUpperCase() !== query.trim().toUpperCase());
+        
+        const cleanStr = (val) => {
+            if (val === undefined || val === null) return "";
+            const s = String(val).trim();
+            return (s === "0" || s.toLowerCase() === "null" || s.toLowerCase() === "undefined") ? "" : s;
+        };
+        
+        const label = cleanStr(firstResult.libelle) || query;
+        const ref = cleanStr(firstResult.ref_article);
+        const price = formatPrice(firstResult.prix_reduit || firstResult.prix_tarif || 0);
+        
+        const newItem = {
+            query: query,
+            label: label.toUpperCase(),
+            ref: ref.toUpperCase(),
+            price: price,
+            type: type,
+            timestamp: Date.now()
+        };
+        
+        recents.unshift(newItem);
+        recents = recents.slice(0, 4);
+        
+        localStorage.setItem('kost_recent_searches', JSON.stringify(recents));
+    } catch (e) {
+        console.error('[Recent Searches] Error saving:', e);
+    }
+}
 
 // Price Formatting Helper (French style thousands dot separator)
 function formatPrice(val) {
@@ -526,8 +691,11 @@ async function performSearch(force = false) {
         console.log('[Flo UI] Empty query. Clearing results.');
         if (resultsBodyMobile) resultsBodyMobile.innerHTML = '';
         if (resultsBodyDesktop) resultsBodyDesktop.innerHTML = '';
+        toggleDashboard(true);
         return;
     }
+
+    toggleDashboard(false);
 
     // Bypass length check if query is purely numeric (barcode) or if search is forced (e.g. Enter, camera scan)
     const isNumeric = /^\d+$/.test(query);
@@ -542,6 +710,10 @@ async function performSearch(force = false) {
         const results = await searchArticles(query);
         console.log(`[Flo UI] Database returned ${results.length} results.`);
         renderResults(results);
+        
+        if (results && results.length > 0) {
+            addToRecentSearches(query, results[0], isNumeric ? 'scan' : 'search');
+        }
     } catch (error) {
         console.error('[Flo Search] Error during performSearch:', error);
     }
@@ -891,6 +1063,37 @@ document.addEventListener('DOMContentLoaded', () => {
     // Clear results on load
     if (resultsBodyMobile) resultsBodyMobile.innerHTML = '';
     if (resultsBodyDesktop) resultsBodyDesktop.innerHTML = '';
+    
+    // Show dashboard on load
+    toggleDashboard(true);
+    
+    // Periodic stats updates
+    setInterval(updateDashboardStats, 5000);
+
+    // Initialize brand buttons SVG logos and click events
+    const brandButtons = document.querySelectorAll('.brand-shortcut-btn');
+    brandButtons.forEach(btn => {
+        const brand = btn.dataset.brand;
+        btn.innerHTML = getBrandLogo(brand);
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (searchInput) {
+                searchInput.value = brand;
+                performSearch(true);
+            }
+        });
+    });
+
+    // Bind Clear Recent Button
+    const btnClearRecent = document.getElementById('dash-btn-clear-recent');
+    if (btnClearRecent) {
+        btnClearRecent.addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('kost_recent_searches');
+            showToast("HISTORIQUE EFFACÉ", "success");
+            renderDashboard();
+        });
+    }
     
     // Bind Search Input Events
     if (searchInput) {

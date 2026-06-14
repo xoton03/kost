@@ -58,6 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }, isResume);
 
+            localStorage.setItem('kost_last_sync_timestamp', Date.now());
             showNotification("Base de données à jour !", "success");
             updateDbStatusUI();
 
