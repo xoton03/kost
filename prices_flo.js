@@ -784,14 +784,31 @@ async function startScanner() {
 
         // Start scanning
         if (scannerCameras.length > 0) {
-            // Find a back camera as the default choice
-            currentCameraIndex = 0;
+            // Find the main back camera (excluding ultra-wide, telephoto, virtual, dual, triple lenses)
+            currentCameraIndex = -1;
             for (let i = 0; i < scannerCameras.length; i++) {
                 const label = (scannerCameras[i].label || "").toLowerCase();
-                if (label.includes('back') || label.includes('arrière') || label.includes('rear') || label.includes('environment')) {
+                const isBack = label.includes('back') || label.includes('arrière') || label.includes('rear') || label.includes('environment') || label.includes('standard');
+                const isSpecialLens = label.includes('ultra') || label.includes('tele') || label.includes('télé') || label.includes('zoom') || label.includes('virtual') || label.includes('dual') || label.includes('triple') || label.includes('macro');
+                
+                if (isBack && !isSpecialLens) {
                     currentCameraIndex = i;
                     break;
                 }
+            }
+            // Fallback: if no camera matches the strict main back camera criteria, just find any back camera
+            if (currentCameraIndex === -1) {
+                for (let i = 0; i < scannerCameras.length; i++) {
+                    const label = (scannerCameras[i].label || "").toLowerCase();
+                    if (label.includes('back') || label.includes('arrière') || label.includes('rear') || label.includes('environment')) {
+                        currentCameraIndex = i;
+                        break;
+                    }
+                }
+            }
+            // Second fallback: if still not found, just use the first camera in the list
+            if (currentCameraIndex === -1) {
+                currentCameraIndex = 0;
             }
             
             const defaultCameraId = scannerCameras[currentCameraIndex].id;
