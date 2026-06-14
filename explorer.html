@@ -600,10 +600,16 @@
                 </div>
             </div>
 
-            <button id="btn-force-update" class="w-full flex items-center gap-3 text-slate-500 hover:text-white transition-colors cursor-pointer border-none bg-transparent p-0 text-left">
-                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                <span class="text-xs font-bold uppercase tracking-widest">Mise à jour</span>
-            </button>
+            <div class="flex items-center justify-between text-slate-500 w-full">
+                <button id="btn-force-update" class="flex items-center gap-2 text-slate-500 hover:text-white transition-colors cursor-pointer border-none bg-transparent p-0 text-left">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    <span class="text-xs font-bold uppercase tracking-widest">Mise à jour</span>
+                </button>
+                <button id="btn-settings" class="flex items-center gap-2 text-slate-500 hover:text-white transition-colors cursor-pointer border-none bg-transparent p-0 text-left" onclick="showToast('PARAMÈTRES NON DISPONIBLES', 'error')">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                    <span class="text-xs font-bold uppercase tracking-widest">Paramètres</span>
+                </button>
+            </div>
         </div>
     </aside>
 
