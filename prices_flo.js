@@ -718,7 +718,7 @@ async function startScanner() {
         };
         
         const config = {
-            fps: 10, // Lower frame rate for better CPU efficiency on iOS (prevent throttling/lag)
+            fps: 24, // Scan rate (24 FPS)
             qrbox: (width, height) => {
                 // Return a slightly smaller scan window, forcing user to pull phone back
                 // into camera's focus range (~15cm). 720p/1080p stream resolves it easily.
