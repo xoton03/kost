@@ -685,10 +685,13 @@ async function performSearch(force = false) {
         return;
     }
     const query = searchInput.value.trim();
-    console.log(`[Flo UI] performSearch called. Query: "${query}", Force: ${force}`);
+    const brandSelect = document.getElementById('brand-select-filter');
+    const brandFilter = brandSelect ? brandSelect.value : '';
     
-    if (!query) {
-        console.log('[Flo UI] Empty query. Clearing results.');
+    console.log(`[Flo UI] performSearch called. Query: "${query}", BrandFilter: "${brandFilter}", Force: ${force}`);
+    
+    if (!query && !brandFilter) {
+        console.log('[Flo UI] Empty query and no brand filter. Clearing results.');
         if (resultsBodyMobile) resultsBodyMobile.innerHTML = '';
         if (resultsBodyDesktop) resultsBodyDesktop.innerHTML = '';
         toggleDashboard(true);
@@ -697,21 +700,21 @@ async function performSearch(force = false) {
 
     toggleDashboard(false);
 
-    // Bypass length check if query is purely numeric (barcode) or if search is forced (e.g. Enter, camera scan)
+    // Bypass length check if query is purely numeric (barcode) or if search is forced (e.g. Enter, camera scan) or if a brand filter is selected
     const isNumeric = /^\d+$/.test(query);
-    if (!force && !isNumeric && query.length < 3) {
+    if (!force && !isNumeric && query.length < 3 && !brandFilter) {
         console.log('[Flo UI] Alphanumeric query too short (< 3 chars) and not forced. Bypassing search.');
         return;
     }
 
     try {
-        console.log(`[Flo UI] Querying database for: "${query}" (isNumeric: ${isNumeric})`);
+        console.log(`[Flo UI] Querying database for: "${query}" (brandFilter: "${brandFilter}")`);
         // Use shared search engine
-        const results = await searchArticles(query);
+        const results = await searchArticles(query, 50, brandFilter);
         console.log(`[Flo UI] Database returned ${results.length} results.`);
         renderResults(results);
         
-        if (results && results.length > 0) {
+        if (results && results.length > 0 && query) {
             addToRecentSearches(query, results[0], isNumeric ? 'scan' : 'search');
         }
     } catch (error) {
@@ -1077,12 +1080,23 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.innerHTML = getBrandLogo(brand);
         btn.addEventListener('click', (e) => {
             e.preventDefault();
+            const brandSelect = document.getElementById('brand-select-filter');
+            if (brandSelect) brandSelect.value = brand;
             if (searchInput) {
-                searchInput.value = brand;
+                searchInput.value = ''; // Clear text search to show all items for this brand
                 performSearch(true);
             }
         });
     });
+
+    // Bind Brand Filter Dropdown change event
+    const brandSelect = document.getElementById('brand-select-filter');
+    if (brandSelect) {
+        brandSelect.addEventListener('change', () => {
+            console.log('[Flo UI] Brand select filter changed.');
+            performSearch(true);
+        });
+    }
 
     // Bind Clear Recent Button
     const btnClearRecent = document.getElementById('dash-btn-clear-recent');

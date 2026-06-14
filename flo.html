@@ -173,8 +173,23 @@
                     placeholder="Rechercher un article..."
                     type="text"
                     autocomplete="off"/>
+                
+                <!-- Brand Filter Dropdown -->
+                <div class="border-l border-outline bg-black/20 flex items-center shrink-0">
+                    <select id="brand-select-filter" class="bg-transparent border-none text-xs text-primary font-bold uppercase tracking-wider focus:ring-0 cursor-pointer py-3.5 pl-3 pr-8">
+                        <option value="" class="bg-surface text-gray-400">TOUTES MARQUES</option>
+                        <option value="POLARIS" class="bg-surface text-white">POLARIS</option>
+                        <option value="KINETIX" class="bg-surface text-white">KINETIX</option>
+                        <option value="TOREX" class="bg-surface text-white">TOREX</option>
+                        <option value="LUMBERJACK" class="bg-surface text-white">LUMBERJACK</option>
+                        <option value="SEVENTEEN" class="bg-surface text-white">SEVENTEEN</option>
+                        <option value="BUTIGO" class="bg-surface text-white">BUTIGO</option>
+                        <option value="MISS F" class="bg-surface text-white">MISS F</option>
+                        <option value="INCI" class="bg-surface text-white">INCI</option>
+                    </select>
+                </div>
             </div>
-            <p class="text-xs text-gray-500 pl-1">Rechercher par code-barre ou référence article</p>
+            <p class="text-xs text-gray-500 pl-1">Rechercher par code-barre, référence, nom ou par marque</p>
         </section>
 
         <!-- Dashboard Home State -->
