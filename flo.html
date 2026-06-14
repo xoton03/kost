@@ -77,13 +77,54 @@
         }
         .empty-pulse { animation: gentle-pulse 3s ease-in-out infinite; }
 
+        /* Scanner Backdrop Blur & Transition */
+        #scanner-modal {
+            transition: all 0.3s ease-in-out;
+        }
+        #scanner-modal:not(.hidden) {
+            animation: backdrop-enter 0.3s ease-out both;
+        }
+        /* Scanner Card Animation with premium spring bounce */
+        #scanner-modal:not(.hidden) > div {
+            animation: modal-enter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+
+        @keyframes backdrop-enter {
+            from { opacity: 0; backdrop-filter: blur(0px); }
+            to { opacity: 1; backdrop-filter: blur(16px); }
+        }
+
+        @keyframes modal-enter {
+            from { opacity: 0; transform: translateY(24px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Injected video element style optimization for perfect framing */
+        #scanner-reader video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            border-radius: 12px;
+        }
+        
+        /* Clean inner container border/margins from html5-qrcode library */
+        #scanner-reader {
+            border: none !important;
+            position: relative;
+        }
+
         /* Scan laser for scanner modal */
         @keyframes scan-laser {
-            0% { top: 0%; opacity: 0.3; }
+            0% { top: 0%; opacity: 0.1; }
             50% { top: 100%; opacity: 1; }
-            100% { top: 0%; opacity: 0.3; }
+            100% { top: 0%; opacity: 0.1; }
         }
-        .animate-laser { animation: scan-laser 3s linear infinite; }
+        .animate-laser {
+            animation: scan-laser 2.5s infinite ease-in-out;
+            background: linear-gradient(90deg, transparent, #ff6d00 15%, #ff6d00 85%, transparent);
+            box-shadow: 0 0 12px #ff6d00, 0 0 24px rgba(255, 109, 0, 0.6);
+            height: 4px !important;
+        }
     </style>
 
     <script src="lucide.js" defer></script>
@@ -326,28 +367,34 @@
     </div>
 
     <!-- Barcode Scanner Modal Overlay -->
-    <div id="scanner-modal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[300] hidden flex flex-col items-center justify-center p-4">
-        <button id="btn-close-scanner" class="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors active:scale-95 z-50 flex items-center justify-center bg-black/40 border border-outline w-12 h-12 rounded-lg" title="Fermer le scanner">
-            <i data-lucide="x" class="w-6 h-6"></i>
+    <div id="scanner-modal" class="fixed inset-0 bg-black/60 z-[300] hidden flex flex-col items-center justify-center p-4">
+        <button id="btn-close-scanner" class="absolute top-6 right-6 text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-95 z-50 flex items-center justify-center bg-zinc-900/60 backdrop-blur-md border border-zinc-800 w-12 h-12 rounded-xl shadow-lg" title="Fermer le scanner">
+            <i data-lucide="x" class="w-5 h-5"></i>
         </button>
 
-        <div class="w-full max-w-md border border-outline bg-surface p-6 flex flex-col gap-6 relative rounded-lg">
-            <div class="flex flex-col gap-1 border-b border-outline pb-4">
+        <div class="w-full max-w-md border border-zinc-800/80 bg-zinc-950/90 p-6 flex flex-col gap-6 relative rounded-2xl shadow-2xl shadow-orange-500/5">
+            <div class="flex flex-col gap-1 border-b border-zinc-800/80 pb-4">
                 <span class="font-heading text-sm font-semibold text-primary uppercase tracking-wider">Scanner actif</span>
-                <span class="text-[11px] text-gray-500">Maintenez le code-barre dans le cadre</span>
+                <span class="text-[11px] text-zinc-500 font-medium">Maintenez le code-barre dans le cadre</span>
             </div>
 
-            <div class="relative w-full aspect-[4/3] bg-black border border-outline overflow-hidden flex items-center justify-center rounded-lg">
+            <div class="relative w-full aspect-[4/3] bg-black border border-zinc-800/80 overflow-hidden flex items-center justify-center rounded-xl shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]">
+                <!-- HUD Corner Brackets for Viewfinder framing -->
+                <div class="absolute top-3 left-3 border-t-2 border-l-2 border-primary/80 w-5 h-5 rounded-tl-sm z-20 pointer-events-none"></div>
+                <div class="absolute top-3 right-3 border-t-2 border-r-2 border-primary/80 w-5 h-5 rounded-tr-sm z-20 pointer-events-none"></div>
+                <div class="absolute bottom-3 left-3 border-b-2 border-l-2 border-primary/80 w-5 h-5 rounded-bl-sm z-20 pointer-events-none"></div>
+                <div class="absolute bottom-3 right-3 border-b-2 border-r-2 border-primary/80 w-5 h-5 rounded-br-sm z-20 pointer-events-none"></div>
+
                 <div id="scanner-reader" class="w-full h-full bg-black"></div>
-                <div id="scanner-laser" class="absolute left-0 right-0 h-0.5 bg-[#ff6d00] shadow-[0_0_10px_#ff6d00] animate-laser pointer-events-none z-10" style="top: 0%;"></div>
+                <div id="scanner-laser" class="absolute left-0 right-0 animate-laser pointer-events-none z-10" style="top: 0%;"></div>
             </div>
 
-            <div class="flex items-center justify-between text-xs text-gray-500">
-                <div class="flex items-center gap-1.5">
+            <div class="flex items-center justify-between text-xs text-zinc-400">
+                <div class="flex items-center gap-1.5 font-medium">
                     <span>Status :</span>
-                    <span id="scanner-status" class="text-primary font-medium">En attente...</span>
+                    <span id="scanner-status" class="text-primary font-bold uppercase tracking-wider">En attente...</span>
                 </div>
-                <button id="btn-toggle-camera" class="hidden text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded px-2.5 py-1.5 flex items-center gap-1.5 select-none active:scale-95 transition-all">
+                <button id="btn-toggle-camera" class="hidden text-[10px] font-bold bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 rounded-lg px-2.5 py-1.5 flex items-center gap-1.5 select-none active:scale-95 transition-all">
                     <i data-lucide="switch-camera" class="w-3.5 h-3.5"></i>
                     Changer de caméra
                 </button>
