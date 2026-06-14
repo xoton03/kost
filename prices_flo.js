@@ -678,8 +678,6 @@ function renderResults(results) {
 
 // Barcode Scanner Integration with html5-qrcode
 let html5QrCode = null;
-let scannerCameras = [];
-let currentCameraIndex = 0;
 
 async function startScanner() {
     const scannerModal = document.getElementById('scanner-modal');
@@ -718,7 +716,7 @@ async function startScanner() {
         };
         
         const config = {
-            fps: 24, // Scan rate (24 FPS)
+            fps: 24, // Higher scan rate for faster detection
             qrbox: (width, height) => {
                 // Returns scan window dimensions optimized for linear barcodes
                 return {
@@ -726,122 +724,40 @@ async function startScanner() {
                     height: Math.min(height * 0.4, 150)
                 };
             },
-            aspectRatio: 1.777778, // 16:9 aspect ratio helps activate the high-res back camera
+            aspectRatio: 1.777778, // 16:9 aspect ratio activates high-res back camera on iOS Safari
             videoConstraints: {
-                // Request higher resolution (1080p ideal, 720p fallback) for better barcode definition
+                facingMode: "environment",
                 width: { min: 640, ideal: 1280, max: 1920 },
                 height: { min: 480, ideal: 720, max: 1080 }
-            },
-            useBarCodeDetectorIfSupported: true, // Native barcode API acceleration
-            experimentalFeatures: {
-                useBarCodeDetectorIfSupported: true
             }
         };
-
-        // Try to enumerate cameras to handle multi-camera iOS devices
-        try {
-            scannerCameras = await Html5Qrcode.getCameras();
-        } catch (camErr) {
-            console.warn('[Flo Scanner] Could not list cameras:', camErr);
-            scannerCameras = [];
-        }
-
-        // Configure toggle camera button if multiple cameras are available
-        const toggleBtn = document.getElementById('btn-toggle-camera');
-        if (toggleBtn) {
-            if (scannerCameras.length > 1) {
-                toggleBtn.classList.remove('hidden');
-                // Recreate element to purge old event listeners
-                toggleBtn.replaceWith(toggleBtn.cloneNode(true));
-                const newToggleBtn = document.getElementById('btn-toggle-camera');
-                if (window.lucide) window.lucide.createIcons(); // Initialize the icon in the cloned button
-                
-                newToggleBtn.addEventListener('click', async () => {
-                    if (!html5QrCode || !html5QrCode.isScanning) return;
-                    currentCameraIndex = (currentCameraIndex + 1) % scannerCameras.length;
-                    if (statusEl) statusEl.textContent = 'CHANGING_CAMERA...';
-                    try {
-                        await html5QrCode.stop();
-                        const nextCameraId = scannerCameras[currentCameraIndex].id;
-                        await html5QrCode.start(
-                            nextCameraId,
-                            config,
-                            qrCodeSuccessCallback
-                        );
-                        if (statusEl) statusEl.textContent = 'ACTIVE_READY';
-                        // Apply slight delay then focus constraint
-                        setTimeout(applyFocusConstraint, 1000);
-                    } catch (err) {
-                        console.error('[Flo Scanner] Camera toggle error:', err);
-                        if (statusEl) statusEl.textContent = 'ERROR_TOGGLE_FAILED';
-                    }
-                });
-            } else {
-                toggleBtn.classList.add('hidden');
-            }
-        }
-
-        // Start scanning
-        if (scannerCameras.length > 0) {
-            // Find the main back camera (excluding ultra-wide, telephoto, virtual, dual, triple lenses)
-            currentCameraIndex = -1;
-            for (let i = 0; i < scannerCameras.length; i++) {
-                const label = (scannerCameras[i].label || "").toLowerCase();
-                const isBack = label.includes('back') || label.includes('arrière') || label.includes('rear') || label.includes('environment') || label.includes('standard');
-                const isSpecialLens = label.includes('ultra') || label.includes('tele') || label.includes('télé') || label.includes('zoom') || label.includes('virtual') || label.includes('dual') || label.includes('triple') || label.includes('macro');
-                
-                if (isBack && !isSpecialLens) {
-                    currentCameraIndex = i;
-                    break;
-                }
-            }
-            // Fallback: if no camera matches the strict main back camera criteria, just find any back camera
-            if (currentCameraIndex === -1) {
-                for (let i = 0; i < scannerCameras.length; i++) {
-                    const label = (scannerCameras[i].label || "").toLowerCase();
-                    if (label.includes('back') || label.includes('arrière') || label.includes('rear') || label.includes('environment')) {
-                        currentCameraIndex = i;
-                        break;
-                    }
-                }
-            }
-            // Second fallback: if still not found, just use the first camera in the list
-            if (currentCameraIndex === -1) {
-                currentCameraIndex = 0;
-            }
-            
-            const defaultCameraId = scannerCameras[currentCameraIndex].id;
-            await html5QrCode.start(
-                defaultCameraId,
-                config,
-                qrCodeSuccessCallback
-            );
-        } else {
-            // Fallback to standard environment facingMode if list is empty
-            await html5QrCode.start(
-                { facingMode: "environment" },
-                config,
-                qrCodeSuccessCallback
-            );
-        }
+        
+        await html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            qrCodeSuccessCallback
+        );
         
         if (statusEl) statusEl.textContent = 'ACTIVE_READY';
 
-        // Apply continuous autofocus and zoom after start (with delay to ensure track is active)
-        async function applyFocusConstraint() {
-            try {
-                if (html5QrCode && html5QrCode.isScanning) {
-                    await html5QrCode.applyVideoConstraints({
-                        focusMode: "continuous"
-                    });
-                    console.log('[Flo Scanner] Applied focusMode continuous constraint.');
-                }
-            } catch (err) {
-                console.warn('[Flo Scanner] Could not set focusMode continuous:', err);
+        // Apply a slight zoom if supported by the camera (typically 1.5x - 2.0x is great for barcodes)
+        try {
+            const capabilities = html5QrCode.getRunningTrackCapabilities();
+            if (capabilities && capabilities.zoom) {
+                const minZoom = capabilities.zoom.min || 1;
+                const maxZoom = capabilities.zoom.max || 1;
+                // Target a slight zoom (e.g., 2.0x zoom)
+                const targetZoom = Math.min(Math.max(minZoom, 2.0), maxZoom);
+                console.log(`[Flo Scanner] Camera supports zoom (min: ${minZoom}, max: ${maxZoom}). Applying: ${targetZoom}`);
+                await html5QrCode.applyVideoConstraints({
+                    advanced: [{ zoom: targetZoom }]
+                });
+            } else {
+                console.log('[Flo Scanner] Zoom capability not supported by this camera/browser.');
             }
+        } catch (zoomErr) {
+            console.warn('[Flo Scanner] Failed to apply zoom constraints:', zoomErr);
         }
-
-        setTimeout(applyFocusConstraint, 1500);
         
     } catch (err) {
         console.error('[Flo Scanner] Error initiating scanner:', err);
