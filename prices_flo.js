@@ -720,11 +720,10 @@ async function startScanner() {
         const config = {
             fps: 24, // Scan rate (24 FPS)
             qrbox: (width, height) => {
-                // Return a slightly smaller scan window, forcing user to pull phone back
-                // into camera's focus range (~15cm). 720p/1080p stream resolves it easily.
+                // Returns scan window dimensions optimized for linear barcodes
                 return {
-                    width: Math.min(width * 0.8, 280),
-                    height: Math.min(height * 0.35, 110)
+                    width: Math.min(width * 0.9, 360),
+                    height: Math.min(height * 0.4, 150)
                 };
             },
             aspectRatio: 1.777778, // 16:9 aspect ratio helps activate the high-res back camera
@@ -839,24 +838,6 @@ async function startScanner() {
                 }
             } catch (err) {
                 console.warn('[Flo Scanner] Could not set focusMode continuous:', err);
-            }
-            
-            // Apply a slight zoom if supported by the camera (helps EAN scanning)
-            try {
-                if (html5QrCode && html5QrCode.isScanning) {
-                    const capabilities = html5QrCode.getRunningTrackCapabilities();
-                    if (capabilities && capabilities.zoom) {
-                        const minZoom = capabilities.zoom.min || 1;
-                        const maxZoom = capabilities.zoom.max || 1;
-                        const targetZoom = Math.min(Math.max(minZoom, 1.8), maxZoom);
-                        console.log(`[Flo Scanner] Camera supports zoom (min: ${minZoom}, max: ${maxZoom}). Applying: ${targetZoom}`);
-                        await html5QrCode.applyVideoConstraints({
-                            advanced: [{ zoom: targetZoom }]
-                        });
-                    }
-                }
-            } catch (zoomErr) {
-                console.warn('[Flo Scanner] Failed to apply zoom constraints:', zoomErr);
             }
         }
 
