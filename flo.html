@@ -343,8 +343,14 @@
             </div>
 
             <div class="flex items-center justify-between text-xs text-gray-500">
-                <span>Status :</span>
-                <span id="scanner-status" class="text-primary font-medium">En attente...</span>
+                <div class="flex items-center gap-1.5">
+                    <span>Status :</span>
+                    <span id="scanner-status" class="text-primary font-medium">En attente...</span>
+                </div>
+                <button id="btn-toggle-camera" class="hidden text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded px-2.5 py-1.5 flex items-center gap-1.5 select-none active:scale-95 transition-all">
+                    <i data-lucide="switch-camera" class="w-3.5 h-3.5"></i>
+                    Changer de caméra
+                </button>
             </div>
         </div>
     </div>
