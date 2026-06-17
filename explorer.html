@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="styles.css">
     <style>
         :root {
-            --bg-deep: #f8f9ff;
+            --bg-deep: #eef2f7;
             --bg-surface: #ffffff;
             --bg-well: #e5eeff;
             --accent-teal: #0d9488;
@@ -496,25 +496,13 @@
 
                 // 1. Primary Filter (Index based if possible)
                 if (searchQuery) {
-                    if (/^\d+$/.test(searchQuery)) {
-                        if (searchQuery.length >= 8) {
-                            const item = await db.catalogue_articles.get(searchQuery);
-                            if (item) {
-                                collection = [item];
-                                isDirectArray = true;
-                            } else {
-                                collection = db.catalogue_articles.where('gencod').startsWith(searchQuery);
-                            }
-                        } else {
-                            collection = db.catalogue_articles.where('gencod').startsWith(searchQuery);
-                        }
-                    } else {
-                        collection = db.catalogue_articles.where('ref_article').startsWithIgnoreCase(searchQuery);
-                        const count = await collection.count();
-                        if (count === 0) {
-                            collection = db.catalogue_articles.where('libelle').startsWithIgnoreCase(searchQuery);
-                        }
-                    }
+                    const queryLower = searchQuery.toLowerCase();
+                    collection = db.catalogue_articles.filter(item => {
+                        const matchGencod = item.gencod && item.gencod.includes(searchQuery);
+                        const matchRef = item.ref_article && item.ref_article.toLowerCase().includes(queryLower);
+                        const matchLibelle = item.libelle && item.libelle.toLowerCase().includes(queryLower);
+                        return matchGencod || matchRef || matchLibelle;
+                    });
                 } else if (brandVal !== "ALL") {
                     collection = db.catalogue_articles.where('brand').equals(brandVal);
                 } else if (genreVal !== "ALL") {
