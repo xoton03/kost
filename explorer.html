@@ -579,12 +579,12 @@
                             if (!isNaN(prixReduit) && prixReduit < prixTarif) {
                                 priceHtml = `
                                     <div style="display: flex; flex-direction: column;">
-                                        <span style="text-decoration: line-through; color: #888; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace;">${prixTarif.toFixed(2)} €</span>
-                                        <span style="color: var(--accent-teal); font-weight: 800; font-family: 'JetBrains Mono', monospace;">${prixReduit.toFixed(2)} €</span>
+                                        <span style="text-decoration: line-through; color: #888; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace;">${prixTarif.toFixed(2)} DA</span>
+                                        <span style="color: var(--accent-teal); font-weight: 800; font-family: 'JetBrains Mono', monospace;">${prixReduit.toFixed(2)} DA</span>
                                     </div>
                                 `;
                             } else {
-                                priceHtml = `<span style="font-weight: 800; font-family: 'JetBrains Mono', monospace;">${prixTarif.toFixed(2)} €</span>`;
+                                priceHtml = `<span style="font-weight: 800; font-family: 'JetBrains Mono', monospace;">${prixTarif.toFixed(2)} DA</span>`;
                             }
                         } else {
                             priceHtml = `<span style="color: #888;">-</span>`;
