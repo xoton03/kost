@@ -187,6 +187,14 @@
             display: none;
         }
 
+        /* Muted styling for empty placeholders */
+        .is-placeholder {
+            color: #94a3b8 !important;
+        }
+        .preview-old-price.is-placeholder::after {
+            background: #cbd5e1 !important;
+        }
+
         /* ===== PRINT STYLES: 35mm x 35mm thermal label ===== */
         @media print {
             @page {
@@ -423,10 +431,10 @@
                 <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Aperçu de l'étiquette (35 x 35 mm)</span>
                 <div id="label-preview-container">
                     <div class="promo-preview-label" id="promo-preview-label">
-                        <div class="preview-old-price" id="preview-old-price">--.-- DA</div>
-                        <div class="preview-discount" id="preview-discount">-%</div>
-                        <div class="preview-new-price" id="preview-new-price">--.-- DA</div>
-                        <div class="preview-ref" id="preview-ref">REF-EXEMPLE</div>
+                        <div class="preview-old-price is-placeholder" id="preview-old-price">1200,00 DA</div>
+                        <div class="preview-discount is-placeholder" id="preview-discount">-30%</div>
+                        <div class="preview-new-price is-placeholder" id="preview-new-price">840,00 DA</div>
+                        <div class="preview-ref is-placeholder" id="preview-ref">REF-EXEMPLE</div>
                     </div>
                 </div>
             </div>
@@ -519,16 +527,37 @@
                 const pct = Math.round(((oldPrice - newPrice) / oldPrice) * 100);
                 discountInput.value = `-${pct}%`;
                 previewDiscount.textContent = `-${pct}%`;
-                previewDiscount.style.display = 'block';
+                previewDiscount.classList.remove('is-placeholder');
             } else {
                 discountInput.value = '';
-                previewDiscount.textContent = '-%';
+                previewDiscount.textContent = '-30%';
+                previewDiscount.classList.add('is-placeholder');
             }
 
             // 2. Update preview
-            previewOldPrice.textContent = !isNaN(oldPrice) ? formatPrice(oldPrice) : '--.-- DA';
-            previewNewPrice.textContent = !isNaN(newPrice) ? formatPrice(newPrice) : '--.-- DA';
-            previewRef.textContent = refText ? refText : 'REF-EXEMPLE';
+            if (!isNaN(oldPrice)) {
+                previewOldPrice.textContent = formatPrice(oldPrice);
+                previewOldPrice.classList.remove('is-placeholder');
+            } else {
+                previewOldPrice.textContent = '1200,00 DA';
+                previewOldPrice.classList.add('is-placeholder');
+            }
+
+            if (!isNaN(newPrice)) {
+                previewNewPrice.textContent = formatPrice(newPrice);
+                previewNewPrice.classList.remove('is-placeholder');
+            } else {
+                previewNewPrice.textContent = '840,00 DA';
+                previewNewPrice.classList.add('is-placeholder');
+            }
+
+            if (refText) {
+                previewRef.textContent = refText;
+                previewRef.classList.remove('is-placeholder');
+            } else {
+                previewRef.textContent = 'REF-EXEMPLE';
+                previewRef.classList.add('is-placeholder');
+            }
         }
 
         // Event listeners for real-time updates
