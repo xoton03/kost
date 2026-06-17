@@ -91,19 +91,24 @@ async function syncCatalogue(onProgress, isResume = false) {
             
             let data = await response.json();
             
+            const cleanStr = val => {
+                const s = String(val || "").trim();
+                return (s === "#N/A" || s === "null" || s === "undefined") ? "" : s;
+            };
+            
             const mappedData = data.map(item => ({
-                gencod: String(item['Code-barres article'] || "").trim(),
-                ref_article: String(item['Ref'] || "").trim().toUpperCase(),
-                libelle: String(item["Nom de l'article"] || 'ARTICLE').trim(),
+                gencod: cleanStr(item['Code-barres article']),
+                ref_article: cleanStr(item['Ref']).toUpperCase(),
+                libelle: cleanStr(item["Nom de l'article"]),
                 prix_tarif: item['Prix'] || null,
                 prix_reduit: item['Prix solde'] || null,
-                brand: String(item['Brand'] || "").trim().toUpperCase(),
-                type_article: String(item["Type de l'article"] || "").trim().toUpperCase(),
-                taille: String(item['Taille'] || "").trim().toUpperCase(),
-                couleur: String(item['Couleur'] || "").trim().toUpperCase(),
-                marche: String(item['March'] || "").trim().toUpperCase(),
-                genre: String(item["Genre de l'article"] || "").trim().toUpperCase(),
-                groupe: String(item["Groupe de l'article"] || "").trim().toUpperCase()
+                brand: cleanStr(item['Brand']).toUpperCase(),
+                type_article: cleanStr(item["Type de l'article"]).toUpperCase(),
+                taille: cleanStr(item['Taille']).toUpperCase(),
+                couleur: cleanStr(item['Couleur']).toUpperCase(),
+                marche: cleanStr(item['March']).toUpperCase(),
+                genre: cleanStr(item["Genre de l'article"]).toUpperCase(),
+                groupe: cleanStr(item["Groupe de l'article"]).toUpperCase()
             }));
             
             await db.catalogue_articles.bulkPut(mappedData);

@@ -14,6 +14,7 @@
     <script src="database.js" defer></script>
     <script src="navigation.js" defer></script>
     <link rel="stylesheet" href="styles.css">
+    <style>
         :root {
             --bg-deep: #f9f9f9;
             --bg-surface: #ffffff;
@@ -436,12 +437,12 @@
                 brandSelect.innerHTML = '<option value="ALL">-- TOUS --</option>';
                 genreSelect.innerHTML = '<option value="ALL">-- TOUS --</option>';
 
-                brands.filter(b => b && b !== "").forEach(b => {
+                brands.filter(b => b && b !== "" && b !== "#N/A").forEach(b => {
                     const opt = new Option(b, b);
                     brandSelect.add(opt);
                 });
 
-                genres.filter(g => g && g !== "").forEach(g => {
+                genres.filter(g => g && g !== "" && g !== "#N/A").forEach(g => {
                     const opt = new Option(g, g);
                     genreSelect.add(opt);
                 });
@@ -460,12 +461,12 @@
                 brandSelect.innerHTML = '<option value="ALL">-- TOUS --</option>';
                 genreSelect.innerHTML = '<option value="ALL">-- TOUS --</option>';
 
-                brands.filter(b => b && b !== "").forEach(b => {
+                brands.filter(b => b && b !== "" && b !== "#N/A").forEach(b => {
                     const opt = new Option(b, b);
                     brandSelect.add(opt);
                 });
 
-                genres.filter(g => g && g !== "").forEach(g => {
+                genres.filter(g => g && g !== "" && g !== "#N/A").forEach(g => {
                     const opt = new Option(g, g);
                     genreSelect.add(opt);
                 });
@@ -594,10 +595,10 @@
                         }
 
                         const tags = [];
-                        if (item.brand) tags.push(`<span class="tag-pill" style="color: var(--accent-orange); background: rgba(255, 77, 0, 0.08); border-color: var(--accent-orange);">${item.brand}</span>`);
-                        if (item.genre) tags.push(`<span class="tag-pill">${item.genre}</span>`);
-                        if (item.groupe) tags.push(`<span class="tag-pill" style="opacity: 0.75;">${item.groupe}</span>`);
-                        if (item.type_article) tags.push(`<span class="tag-pill" style="opacity: 0.5;">${item.type_article}</span>`);
+                        if (item.brand && item.brand !== "#N/A") tags.push(`<span class="tag-pill" style="color: var(--accent-orange); background: rgba(255, 77, 0, 0.08); border-color: var(--accent-orange);">${item.brand}</span>`);
+                        if (item.genre && item.genre !== "#N/A") tags.push(`<span class="tag-pill">${item.genre}</span>`);
+                        if (item.groupe && item.groupe !== "#N/A") tags.push(`<span class="tag-pill" style="opacity: 0.75;">${item.groupe}</span>`);
+                        if (item.type_article && item.type_article !== "#N/A") tags.push(`<span class="tag-pill" style="opacity: 0.5;">${item.type_article}</span>`);
                         
                         const tagsHtml = `<div style="display: flex; flex-wrap: wrap; gap: 4px;">${tags.join('')}</div>`;
 
@@ -605,11 +606,11 @@
                             <tr>
                                 <td class="mono-data">${item.gencod || "-"}</td>
                                 <td class="ref-cell">${item.ref_article || "-"}</td>
-                                <td style="font-weight: 500;">${item.libelle || "-"}</td>
+                                <td style="font-weight: 500;">${(item.libelle && item.libelle !== "#N/A") ? item.libelle : "-"}</td>
                                 <td>
                                     <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                                        ${item.taille ? `<span class="tag-pill" style="background: #000; color: #fff; border-color: #000;">T. ${item.taille}</span>` : ""}
-                                        ${item.couleur ? `<span class="tag-pill" style="background: #eee; color: #000; border-color: #ccc;">${item.couleur}</span>` : ""}
+                                        ${item.taille && item.taille !== "#N/A" ? `<span class="tag-pill" style="background: #000; color: #fff; border-color: #000;">T. ${item.taille}</span>` : ""}
+                                        ${item.couleur && item.couleur !== "#N/A" ? `<span class="tag-pill" style="background: #eee; color: #000; border-color: #ccc;">${item.couleur}</span>` : ""}
                                     </div>
                                 </td>
                                 <td>${priceHtml}</td>
