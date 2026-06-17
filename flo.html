@@ -474,11 +474,37 @@
                 <!-- Preview area representing a 35x35mm ticket -->
                 <div class="flex flex-col items-center justify-center bg-white shadow-inner mx-auto relative overflow-hidden" 
                      style="width: 132px; height: 132px; padding: 10px; border-radius: 4px;">
-                    <div id="preview-price" class="font-heading font-black text-black text-3xl text-center underline mb-2 tracking-tighter">
+                    <div id="preview-price" class="text-black text-[32px] text-center underline mb-2 tracking-tighter font-extrabold"
+                         style="font-family: 'Arial Black', 'Arial', sans-serif; line-height: 1.1; text-underline-offset: 4px;">
                         -- DA
                     </div>
-                    <div id="preview-ref" class="font-heading font-bold text-black text-[10px] text-center uppercase tracking-wide">
+                    <div id="preview-title" class="text-black text-[9px] text-center uppercase tracking-wide truncate max-w-full hidden"
+                         style="font-family: 'Arial', sans-serif; margin-bottom: 2px;">
                         --
+                    </div>
+                    <div id="preview-ref" class="text-black text-xs text-center uppercase tracking-wider font-normal"
+                         style="font-family: 'Arial', sans-serif;">
+                        --
+                    </div>
+                </div>
+
+                <!-- Label Options Toggles -->
+                <div class="w-full flex flex-col gap-2 bg-white/5 p-3 rounded-xl border border-white/10">
+                    <!-- Decimal option toggle -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">Ajouter ,00 au prix</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="checkbox-decimals" class="sr-only peer" checked>
+                            <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary peer-checked:after:bg-white"></div>
+                        </label>
+                    </div>
+                    <!-- Article Name option toggle -->
+                    <div class="flex items-center justify-between border-t border-white/5 pt-2">
+                        <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">Afficher le nom de l'article</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="checkbox-article-name" class="sr-only peer">
+                            <div class="w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary peer-checked:after:bg-white"></div>
+                        </label>
                     </div>
                 </div>
 

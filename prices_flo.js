@@ -585,26 +585,62 @@ function getBrandLogo(brandName) {
 // Modal state variables
 let currentPrintJob = null;
 
+function getFormattedPriceForModal(rawPrice, includeDecimals) {
+    const basePrice = formatPrice(rawPrice);
+    return includeDecimals ? `${basePrice},00 DA` : `${basePrice} DA`;
+}
+
+function updatePrintModalPreview() {
+    if (!currentPrintJob) return;
+    
+    const checkboxDecimals = document.getElementById('checkbox-decimals');
+    const checkboxArticleName = document.getElementById('checkbox-article-name');
+    
+    const includeDecimals = checkboxDecimals ? checkboxDecimals.checked : true;
+    const includeArticleName = checkboxArticleName ? checkboxArticleName.checked : false;
+    
+    const formattedPrice = getFormattedPriceForModal(currentPrintJob.rawPrice, includeDecimals);
+    
+    const previewPrice = document.getElementById('preview-price');
+    const previewTitle = document.getElementById('preview-title');
+    
+    if (previewPrice) previewPrice.textContent = formattedPrice;
+    if (previewTitle) {
+        if (includeArticleName) {
+            previewTitle.classList.remove('hidden');
+        } else {
+            previewTitle.classList.add('hidden');
+        }
+    }
+    
+    // Update context variables
+    currentPrintJob.formattedPrice = formattedPrice;
+    currentPrintJob.includeArticleName = includeArticleName;
+}
+
 // Global Print Action Handler (exposed to window for inline onclick attributes)
-window.handlePrintArticle = function(btn, gencod, ref, color, size, brand, price) {
+window.handlePrintArticle = function(btn, gencod, ref, color, size, brand, price, title) {
     if (!btn) return;
     
     const formattedRef = String(ref || "").trim().toUpperCase();
-    const formattedPrice = formatPrice(price) + " DA";
+    const formattedTitle = String(title || "").trim().toUpperCase().replace(/_/g, ' ');
     
     // Set modal content
-    const previewPrice = document.getElementById('preview-price');
+    const previewTitle = document.getElementById('preview-title');
     const previewRef = document.getElementById('preview-ref');
     const qtyInput = document.getElementById('print-qty-input');
     
-    if (previewPrice) previewPrice.textContent = formattedPrice;
+    if (previewTitle) previewTitle.textContent = formattedTitle;
     if (previewRef) previewRef.textContent = formattedRef;
     if (qtyInput) qtyInput.value = "1";
     
     // Store current job context
     currentPrintJob = {
-        btn, gencod, ref: formattedRef, color, size, brand, formattedPrice
+        btn, gencod, ref: formattedRef, color, size, brand, rawPrice: price, title: formattedTitle
     };
+    
+    // Update preview based on checkbox states
+    updatePrintModalPreview();
     
     // Show modal
     const modal = document.getElementById('print-modal');
@@ -829,7 +865,7 @@ function renderResults(results) {
                 </div>` : ''}
             </div>
             
-            <button onclick="handlePrintArticle(this, '${item.gencod}', '${formattedRef}', '${couleur}', '${taille}', '${brand}', '${activePrice}')" class="w-full bg-primary-container text-on-primary-container py-6 font-label-caps text-label-caps font-black uppercase hover:bg-white hover:text-black transition-colors flex items-center justify-center gap-2">
+            <button onclick="handlePrintArticle(this, '${item.gencod}', '${formattedRef}', '${couleur}', '${taille}', '${brand}', '${activePrice}', '${formattedTitle}')" class="w-full bg-primary-container text-on-primary-container py-6 font-label-caps text-label-caps font-black uppercase hover:bg-white hover:text-black transition-colors flex items-center justify-center gap-2">
                 <i data-lucide="printer" class="w-5 h-5"></i>
                 IMPRIMER
             </button>
@@ -1181,6 +1217,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
+    const checkboxDecimals = document.getElementById('checkbox-decimals');
+    const checkboxArticleName = document.getElementById('checkbox-article-name');
+    
+    if (checkboxDecimals) checkboxDecimals.addEventListener('change', updatePrintModalPreview);
+    if (checkboxArticleName) checkboxArticleName.addEventListener('change', updatePrintModalPreview);
+
     if (btnConfirmPrint) {
         btnConfirmPrint.addEventListener('click', async () => {
             if (!currentPrintJob) return;
@@ -1191,12 +1233,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
             
-            const { btn, gencod, ref, formattedPrice } = currentPrintJob;
+            const { btn, gencod, ref, formattedPrice, includeArticleName, title } = currentPrintJob;
             
             // Close modal immediately
             closePrintModal();
             
-            console.log(`[Flo UI] Printing article: Gencod: ${gencod}, Ref: ${ref}, Price: ${formattedPrice}, Qty: ${quantity}`);
+            console.log(`[Flo UI] Printing article: Gencod: ${gencod}, Ref: ${ref}, Price: ${formattedPrice}, Qty: ${quantity}, ArticleName: ${includeArticleName ? title : 'None'}`);
             
             const originalContent = btn.innerHTML;
             btn.disabled = true;
@@ -1214,6 +1256,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify({
                         price: formattedPrice,
                         reference: ref,
+                        article_name: includeArticleName ? title : null,
                         quantity: quantity,
                         status: 'pending'
                     })

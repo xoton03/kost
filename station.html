@@ -489,18 +489,34 @@
                 color: #000000 !important;
             }
             .flo-price {
-                font-family: 'Space Grotesk', sans-serif !important;
-                font-size: 15pt !important;
+                font-family: 'Arial Black', 'Arial', sans-serif !important;
+                font-size: 20pt !important;
                 font-weight: 900 !important;
                 color: #000000 !important;
                 margin-bottom: 1.5mm !important;
                 text-align: center !important;
                 text-decoration: underline !important;
+                text-underline-offset: 1.2mm !important;
+                line-height: 1.1 !important;
+            }
+            .flo-name {
+                font-family: 'Arial', sans-serif !important;
+                font-size: 8pt !important;
+                font-weight: bold !important;
+                text-transform: uppercase !important;
+                color: #000000 !important;
+                letter-spacing: 0.02em !important;
+                text-align: center !important;
+                margin-bottom: 1.5mm !important;
+                width: 100% !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
             }
             .flo-ref {
-                font-family: 'Space Grotesk', sans-serif !important;
-                font-size: 9pt !important;
-                font-weight: 700 !important;
+                font-family: 'Arial', sans-serif !important;
+                font-size: 11pt !important;
+                font-weight: normal !important;
                 text-transform: uppercase !important;
                 color: #000000 !important;
                 letter-spacing: 0.05em !important;
@@ -875,12 +891,18 @@
                     const priceEl = document.createElement('div');
                     priceEl.className = 'flo-price';
                     priceEl.textContent = floData.price;
+                    label.appendChild(priceEl);
+                    
+                    if (floData.article_name) {
+                        const nameEl = document.createElement('div');
+                        nameEl.className = 'flo-name';
+                        nameEl.textContent = floData.article_name;
+                        label.appendChild(nameEl);
+                    }
                     
                     const refEl = document.createElement('div');
                     refEl.className = 'flo-ref';
                     refEl.textContent = floData.reference;
-                    
-                    label.appendChild(priceEl);
                     label.appendChild(refEl);
                 } else {
                     label.className = 'print-label';
@@ -1023,7 +1045,8 @@
                             details: JSON.stringify({
                                 type: 'flo',
                                 price: job.price,
-                                reference: job.reference
+                                reference: job.reference,
+                                article_name: job.article_name
                             })
                         };
                         enqueueJob(mappedJob);
@@ -1091,7 +1114,8 @@
                         details: JSON.stringify({
                             type: 'flo',
                             price: job.price,
-                            reference: job.reference
+                            reference: job.reference,
+                            article_name: job.article_name
                         })
                     };
                     enqueueJob(mappedJob);
