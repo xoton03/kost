@@ -200,20 +200,11 @@ function getBrandLogo(brandName) {
         case 'POLARIS':
             return `
             <svg viewBox="0 0 140 32" class="h-7 w-auto select-none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <linearGradient id="polaris-glow" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stop-color="#00E5FF" />
-                        <stop offset="100%" stop-color="#0088FF" />
-                    </linearGradient>
-                    <filter id="glow-polaris" x="-20%" y="-20%" width="140%" height="140%">
-                        <feGaussianBlur stdDeviation="1.5" result="blur" />
-                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                    </filter>
-                </defs>
-                <rect width="140" height="32" fill="#0A0A0A" />
-                <text x="70" y="22" font-family="'Space Grotesk', sans-serif" font-weight="900" font-size="15" fill="url(#polaris-glow)" letter-spacing="3" text-anchor="middle" filter="url(#glow-polaris)">POLARIS</text>
-                <line x1="15" y1="26" x2="125" y2="26" stroke="#00E5FF" stroke-width="1.5" opacity="0.8" />
-                <circle cx="70" cy="26" r="2" fill="#FFFFFF" />
+                <style>
+                    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,900&display=swap');
+                </style>
+                <rect width="140" height="32" fill="#FFFFFF" rx="4" />
+                <text x="70" y="22" font-family="'Playfair Display', 'Georgia', 'Times New Roman', serif" font-weight="900" font-style="italic" font-size="20" fill="#E52E2D" text-anchor="middle" letter-spacing="0.5">Polaris<tspan font-size="7" font-style="normal" font-weight="bold" dy="-7">®</tspan></text>
             </svg>`;
 
         case 'KINETIX':
