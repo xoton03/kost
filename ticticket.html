@@ -132,11 +132,26 @@
         }
         
         .preview-old-price {
+            font-family: 'Arial', sans-serif;
             font-size: 1.8rem;
             font-weight: 500;
-            text-decoration: line-through;
+            text-decoration: none;
             color: #000;
             margin-bottom: 4px;
+            position: relative;
+            display: inline-block;
+        }
+        .preview-old-price::after {
+            content: "";
+            position: absolute;
+            left: -4px;
+            right: -4px;
+            top: 50%;
+            height: 2px;
+            background: #000;
+            transform: rotate(-10deg);
+            transform-origin: center;
+            pointer-events: none;
         }
         
         .preview-discount {
@@ -151,6 +166,7 @@
         }
         
         .preview-new-price {
+            font-family: 'Arial Black', 'Arial', sans-serif;
             font-size: 1.8rem;
             font-weight: 900;
             color: #000;
@@ -201,12 +217,26 @@
                 color: #000 !important;
             }
             .promo-old-price {
-                font-family: 'Space Grotesk', sans-serif;
+                font-family: 'Arial', sans-serif;
                 font-size: 13pt;
-                text-decoration: line-through;
+                text-decoration: none;
                 color: #000;
                 font-weight: 500;
                 margin-bottom: 0.5mm;
+                position: relative;
+                display: inline-block;
+            }
+            .promo-old-price::after {
+                content: "";
+                position: absolute;
+                left: -2px;
+                right: -2px;
+                top: 50%;
+                height: 1.5px;
+                background: #000;
+                transform: rotate(-10deg);
+                transform-origin: center;
+                pointer-events: none;
             }
             .promo-discount {
                 font-family: 'Space Grotesk', sans-serif;
@@ -222,7 +252,7 @@
                 print-color-adjust: exact;
             }
             .promo-new-price {
-                font-family: 'Space Grotesk', sans-serif;
+                font-family: 'Arial Black', 'Arial', sans-serif;
                 font-size: 13pt;
                 font-weight: 900;
                 color: #000;
@@ -473,7 +503,7 @@
             const clean = String(val).replace(/[\.,\s]/g, '');
             const num = parseFloat(clean);
             if (isNaN(num)) return '-- DA';
-            return Math.round(num).toString() + ' DA';
+            return Math.round(num).toString() + ',00 DA';
         }
 
         // Calculate and update fields

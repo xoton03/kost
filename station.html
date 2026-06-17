@@ -425,12 +425,26 @@
                 color: #000000 !important;
             }
             .promo-old-price {
-                font-family: 'Space Grotesk', sans-serif !important;
+                font-family: 'Arial', sans-serif !important;
                 font-size: 13pt !important;
-                text-decoration: line-through !important;
+                text-decoration: none !important;
                 color: #000000 !important;
                 font-weight: 500 !important;
                 margin-bottom: 0.5mm !important;
+                position: relative !important;
+                display: inline-block !important;
+            }
+            .promo-old-price::after {
+                content: "" !important;
+                position: absolute !important;
+                left: -2px !important;
+                right: -2px !important;
+                top: 50% !important;
+                height: 1.5px !important;
+                background: #000000 !important;
+                transform: rotate(-10deg) !important;
+                transform-origin: center !important;
+                pointer-events: none !important;
             }
             .promo-discount {
                 font-family: 'Space Grotesk', sans-serif !important;
@@ -446,7 +460,7 @@
                 print-color-adjust: exact !important;
             }
             .promo-new-price {
-                font-family: 'Space Grotesk', sans-serif !important;
+                font-family: 'Arial Black', 'Arial', sans-serif !important;
                 font-size: 13pt !important;
                 font-weight: 900 !important;
                 color: #000000 !important;
@@ -773,7 +787,7 @@
             const clean = String(val).replace(/[\.,\s]/g, '');
             const num = parseFloat(clean);
             if (isNaN(num)) return '-- DA';
-            return Math.round(num).toString() + ' DA';
+            return Math.round(num).toString() + ',00 DA';
         }
 
         async function executePrintJob(job) {

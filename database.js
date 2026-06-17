@@ -46,7 +46,7 @@ async function syncCatalogue(onProgress, isResume = false) {
     console.log(`[DB] Starting ${isResume ? 'RESUME' : 'FULL'} synchronization (V7 FORCE)...`);
     
     // 1. Get total count
-    const countResponse = await fetch(`${SUPABASE_URL}/rest/v1/base_flo?select=count`, {
+    const countResponse = await fetch(`${SUPABASE_URL}/rest/v1/base_flo-new?select=count`, {
         headers: {
             'apikey': SUPABASE_KEY,
             'Range-Unit': 'items',
@@ -80,7 +80,7 @@ async function syncCatalogue(onProgress, isResume = false) {
         const end = Math.min(totalSaved + chunkSize - 1, totalItems - 1);
         
         try {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/base_flo?select=*`, {
+            const response = await fetch(`${SUPABASE_URL}/rest/v1/base_flo-new?select=*`, {
                 headers: {
                     'apikey': SUPABASE_KEY,
                     'Range': `${totalSaved}-${end}`
@@ -336,7 +336,7 @@ async function searchSupabase(query, limit = 50) {
     const isNumeric = /^\d+$/.test(cleanQuery);
     
     const encodedQuery = encodeURIComponent(cleanQuery);
-    let url = `${SUPABASE_URL}/rest/v1/base_flo?select=*&limit=${limit}`;
+    let url = `${SUPABASE_URL}/rest/v1/base_flo-new?select=*&limit=${limit}`;
     if (isNumeric) {
         url += `&or=("Code-barres article".eq.${encodedQuery},Ref.ilike.${encodedQuery}%)`;
     } else {
@@ -383,7 +383,7 @@ async function searchSupabaseFiltered(query, brandFilter, limit = 50) {
 
     console.log(`[DB] Querying Supabase with brand filter directly for: "${cleanQuery}" (brand: ${cleanBrand})`);
     
-    let url = `${SUPABASE_URL}/rest/v1/base_flo?select=*&limit=${limit}`;
+    let url = `${SUPABASE_URL}/rest/v1/base_flo-new?select=*&limit=${limit}`;
     const conditions = [];
 
     if (cleanQuery) {
