@@ -14,32 +14,31 @@
     <script src="database.js" defer></script>
     <script src="navigation.js" defer></script>
     <link rel="stylesheet" href="styles.css">
-    <style>
         :root {
-            --bg-deep: #0a0604;
-            --bg-surface: #1d100a;
-            --accent-glow: rgba(255, 109, 0, 0.15);
+            --bg-deep: #f9f9f9;
+            --bg-surface: #ffffff;
+            --bg-well: #eeeeee;
+            --accent-orange: #ff4d00;
+            --border-primary: #000000;
         }
 
         body { 
             background: var(--bg-deep); 
-            color: #fff; 
+            color: #000000; 
             overflow: hidden;
             font-family: 'Inter', sans-serif;
         }
 
         .explorer-container {
             display: grid;
-            grid-template-rows: auto 1fr auto;
+            grid-template-rows: auto auto 1fr auto;
             height: 100vh;
-            background: radial-gradient(circle at 50% 0%, var(--accent-glow) 0%, transparent 70%);
         }
 
         /* PREMIUM HEADER */
         .explorer-header {
-            background: rgba(10, 6, 4, 0.8);
-            backdrop-blur: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: var(--bg-surface);
+            border-bottom: 2px solid var(--border-primary);
             padding: 0.75rem 1.5rem;
             display: flex;
             align-items: center;
@@ -62,27 +61,38 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            color: #000000;
         }
 
         .v-badge {
             font-size: 0.6rem;
-            background: var(--industrial-orange);
-            color: #000;
+            background: var(--accent-orange);
+            color: #ffffff;
             padding: 1px 4px;
-            border-radius: 2px;
+            border-radius: 0px;
             font-weight: 900;
+        }
+
+        .terminal-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: bold;
+            background: #000000;
+            color: #ffffff;
+            padding: 4px 8px;
+            border-radius: 0px;
+            letter-spacing: 0.05em;
         }
 
         /* FILTER GRID */
         .filter-panel {
-            background: var(--bg-surface);
-            border-bottom: 1px solid rgba(255, 109, 0, 0.2);
+            background: var(--bg-well);
+            border-bottom: 2px solid var(--border-primary);
             padding: 1rem 1.5rem;
             display: grid;
             grid-template-columns: 1.5fr 1fr 1fr auto;
             gap: 1.5rem;
             align-items: end;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
 
         @media (max-width: 1024px) {
@@ -98,90 +108,168 @@
             .filter-panel > :first-child { grid-column: span 1; }
         }
 
+        /* NEU-BRUTALIST INPUTS */
+        .terminal-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .terminal-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            color: #000000;
+            text-transform: uppercase;
+        }
+
+        .terminal-input, .terminal-select {
+            width: 100%;
+            background: #ffffff;
+            border: 2px solid var(--border-primary);
+            border-radius: 0px;
+            padding: 0.6rem 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #000000;
+            transition: all 0.15s ease;
+            box-shadow: 2px 2px 0px 0px var(--border-primary);
+        }
+
+        .terminal-input:focus, .terminal-select:focus {
+            outline: none;
+            border-color: var(--accent-orange);
+            box-shadow: 2px 2px 0px 0px var(--accent-orange);
+        }
+
+        .terminal-btn {
+            background: #ffffff;
+            border: 2px solid var(--border-primary);
+            border-radius: 0px;
+            color: #000000;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 800;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+            box-shadow: 3px 3px 0px 0px var(--border-primary);
+            text-transform: uppercase;
+        }
+
+        .terminal-btn:hover {
+            background: var(--accent-orange);
+            color: #ffffff;
+            border-color: var(--border-primary);
+            box-shadow: 3px 3px 0px 0px var(--border-primary);
+        }
+
+        .terminal-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0px 0px var(--border-primary);
+        }
+
         /* TABLE STYLING */
         .table-area {
             position: relative;
             overflow: auto;
-            background: rgba(0,0,0,0.2);
+            background: #ffffff;
         }
 
         .terminal-table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
 
         .terminal-table th {
             position: sticky;
             top: 0;
-            background: var(--bg-surface);
-            color: #888;
+            background: var(--bg-well);
+            color: #000000;
             font-family: 'Space Grotesk', sans-serif;
-            font-weight: 700;
+            font-weight: 800;
             text-transform: uppercase;
-            font-size: 0.65rem;
-            letter-spacing: 1px;
+            font-size: 0.7rem;
+            letter-spacing: 0.05em;
             padding: 1rem;
             text-align: left;
-            border-bottom: 2px solid var(--industrial-orange);
+            border-bottom: 2px solid var(--border-primary);
+            border-right: 1px solid var(--border-primary);
             z-index: 10;
         }
 
+        .terminal-table th:last-child {
+            border-right: none;
+        }
+
         .terminal-table td {
-            padding: 0.85rem 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-primary);
+            border-right: 1px solid #eeeeee;
             vertical-align: middle;
+            color: #000000;
+        }
+
+        .terminal-table td:last-child {
+            border-right: none;
         }
 
         .terminal-table tr:hover {
-            background: rgba(255, 109, 0, 0.05);
+            background: rgba(255, 77, 0, 0.04);
         }
 
         .mono-data {
             font-family: 'JetBrains Mono', monospace;
-            color: var(--industrial-orange);
+            color: #000000;
             font-weight: 500;
         }
 
         .ref-cell {
             font-family: 'Space Grotesk', sans-serif;
             font-weight: 700;
-            color: #fff;
+            color: #000000;
         }
 
         .tag-pill {
             display: inline-block;
             padding: 2px 8px;
-            border-radius: 4px;
-            background: rgba(255,255,255,0.05);
-            color: #666;
+            border-radius: 0px;
+            background: var(--bg-deep);
+            border: 1px solid var(--border-primary);
+            color: #000000;
             font-size: 0.65rem;
-            font-weight: 800;
+            font-weight: 700;
             text-transform: uppercase;
+            font-family: 'JetBrains Mono', monospace;
         }
 
         /* LOADING OVERLAY */
         #loading-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(10, 6, 4, 0.8);
+            background: rgba(255, 255, 255, 0.8);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             z-index: 50;
-            backdrop-blur: 4px;
+            backdrop-filter: blur(2px);
             display: none;
         }
 
         .spinner {
             width: 40px;
             height: 40px;
-            border: 3px solid rgba(255, 109, 0, 0.1);
-            border-top-color: var(--industrial-orange);
+            border: 4px solid var(--bg-well);
+            border-top-color: var(--accent-orange);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
         }
 
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -189,7 +277,7 @@
         /* PAGINATION */
         .pagination-bar {
             background: var(--bg-surface);
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            border-top: 2px solid var(--border-primary);
             padding: 0.75rem 1.5rem;
             display: flex;
             justify-content: space-between;
@@ -198,41 +286,46 @@
         }
 
         .page-info {
-            color: #666;
+            color: #000000;
             font-size: 0.7rem;
             font-weight: 800;
             text-transform: uppercase;
         }
 
-        .page-info b { color: #fff; }
+        .page-info b { color: var(--accent-orange); }
 
         .btn-group {
             display: flex;
-            gap: 2px;
-            background: rgba(255,255,255,0.05);
-            padding: 2px;
-            border-radius: 4px;
+            gap: 6px;
         }
 
         .nav-btn {
-            background: transparent;
-            border: none;
-            color: #fff;
-            padding: 0.5rem 1.5rem;
+            background: #ffffff;
+            border: 2px solid var(--border-primary);
+            border-radius: 0px;
+            color: #000000;
+            padding: 0.5rem 1.25rem;
             font-family: 'Space Grotesk', sans-serif;
             font-weight: 800;
             font-size: 0.7rem;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.15s ease;
+            box-shadow: 2px 2px 0px 0px var(--border-primary);
+            text-transform: uppercase;
         }
 
         .nav-btn:hover:not(:disabled) {
-            background: var(--industrial-orange);
-            color: #000;
+            background: var(--accent-orange);
+            color: #ffffff;
+        }
+
+        .nav-btn:active:not(:disabled) {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0px 0px var(--border-primary);
         }
 
         .nav-btn:disabled {
-            opacity: 0.2;
+            opacity: 0.3;
             cursor: not-allowed;
         }
     </style>
@@ -242,7 +335,7 @@
     <div class="explorer-container animate-entrance">
         <!-- HEADER -->
         <header class="explorer-header">
-            <button id="hamburger-trigger" class="btn-search" style="padding: 0.5rem; background: transparent;">
+            <button id="hamburger-trigger" style="padding: 0.5rem; background: transparent; border: none; cursor: pointer; color: #000000;">
                 <i data-lucide="menu" style="width: 20px; height: 20px;"></i>
             </button>
             <div class="header-title">
@@ -258,19 +351,19 @@
         <div class="filter-panel">
             <div class="terminal-input-group">
                 <div class="terminal-label">SEARCH_QUERY:</div>
-                <input type="text" id="search-input" class="terminal-input" placeholder="RÉFÉRENCE, GENCOD, LIBELLÉ..." autocomplete="off">
+                <input type="text" id="search-input" class="terminal-input" placeholder="RÉFÉRENCE, CODE-BARRES, NOM..." autocomplete="off">
             </div>
 
             <div class="terminal-input-group">
-                <div class="terminal-label">FILTER_DEPT:</div>
-                <select id="dept-filter" class="terminal-select">
+                <div class="terminal-label">FILTER_BRAND:</div>
+                <select id="brand-filter" class="terminal-select">
                     <option value="ALL">-- TOUS --</option>
                 </select>
             </div>
 
             <div class="terminal-input-group">
-                <div class="terminal-label">FILTER_GROUP:</div>
-                <select id="group-filter" class="terminal-select">
+                <div class="terminal-label">FILTER_GENRE:</div>
+                <select id="genre-filter" class="terminal-select">
                     <option value="ALL">-- TOUS --</option>
                 </select>
             </div>
@@ -285,17 +378,18 @@
         <div class="table-area">
             <div id="loading-overlay">
                 <div class="spinner"></div>
-                <div style="margin-top: 1rem; font-family: 'Space Grotesk', sans-serif; font-size: 0.7rem; color: var(--industrial-orange); letter-spacing: 2px;">FETCHING_DATA...</div>
+                <div style="margin-top: 1rem; font-family: 'Space Grotesk', sans-serif; font-size: 0.7rem; color: var(--accent-orange); letter-spacing: 2px;">FETCHING_DATA...</div>
             </div>
 
             <table class="terminal-table">
                 <thead>
                     <tr>
-                        <th style="width: 160px;">GENCOD</th>
-                        <th style="width: 200px;">CODE_ARTICLE</th>
-                        <th style="width: 140px;">VARIANT</th>
-                        <th style="width: 100px;">SIZE</th>
-                        <th>METADATA / CATEGORIZATION</th>
+                        <th style="width: 150px;">CODE-BARRES</th>
+                        <th style="width: 150px;">RÉFÉRENCE</th>
+                        <th>NOM DE L'ARTICLE</th>
+                        <th style="width: 160px;">TAILLE / COULEUR</th>
+                        <th style="width: 160px;">PRIX</th>
+                        <th style="width: 320px;">CLASSIFICATION</th>
                     </tr>
                 </thead>
                 <tbody id="db-tbody">
@@ -332,34 +426,49 @@
         async function populateFilters() {
             try {
                 // Since we added indices, uniqueKeys() is very fast
-                const depts = await db.catalogue_articles.orderBy('departement').uniqueKeys();
-                const groups = await db.catalogue_articles.orderBy('groupe').uniqueKeys();
+                const brands = await db.catalogue_articles.orderBy('brand').uniqueKeys();
+                const genres = await db.catalogue_articles.orderBy('genre').uniqueKeys();
 
-                const deptSelect = document.getElementById('dept-filter');
-                const groupSelect = document.getElementById('group-filter');
+                const brandSelect = document.getElementById('brand-filter');
+                const genreSelect = document.getElementById('genre-filter');
 
                 // Clear existing (except ALL)
-                deptSelect.innerHTML = '<option value="ALL">-- TOUS --</option>';
-                groupSelect.innerHTML = '<option value="ALL">-- TOUS --</option>';
+                brandSelect.innerHTML = '<option value="ALL">-- TOUS --</option>';
+                genreSelect.innerHTML = '<option value="ALL">-- TOUS --</option>';
 
-                depts.filter(d => d && d !== "").forEach(d => {
-                    const opt = new Option(d, d);
-                    deptSelect.add(opt);
+                brands.filter(b => b && b !== "").forEach(b => {
+                    const opt = new Option(b, b);
+                    brandSelect.add(opt);
                 });
 
-                groups.filter(g => g && g !== "").forEach(g => {
+                genres.filter(g => g && g !== "").forEach(g => {
                     const opt = new Option(g, g);
-                    groupSelect.add(opt);
+                    genreSelect.add(opt);
                 });
 
-                console.log(`[Explorer] Filters populated: ${depts.length} depts, ${groups.length} groups`);
+                console.log(`[Explorer] Filters populated: ${brands.length} brands, ${genres.length} genres`);
             } catch (err) {
                 console.warn("[Explorer] Filter population fallback...", err);
                 // Fallback for non-indexed or errors
                 const sample = await db.catalogue_articles.limit(20000).toArray();
-                const depts = [...new Set(sample.map(i => i.departement))].sort();
-                const groups = [...new Set(sample.map(i => i.groupe))].sort();
-                // ... same population logic
+                const brands = [...new Set(sample.map(i => i.brand))].sort();
+                const genres = [...new Set(sample.map(i => i.genre))].sort();
+                
+                const brandSelect = document.getElementById('brand-filter');
+                const genreSelect = document.getElementById('genre-filter');
+
+                brandSelect.innerHTML = '<option value="ALL">-- TOUS --</option>';
+                genreSelect.innerHTML = '<option value="ALL">-- TOUS --</option>';
+
+                brands.filter(b => b && b !== "").forEach(b => {
+                    const opt = new Option(b, b);
+                    brandSelect.add(opt);
+                });
+
+                genres.filter(g => g && g !== "").forEach(g => {
+                    const opt = new Option(g, g);
+                    genreSelect.add(opt);
+                });
             }
         }
 
@@ -367,48 +476,76 @@
             const tbody = document.getElementById('db-tbody');
             const overlay = document.getElementById('loading-overlay');
             const searchQuery = document.getElementById('search-input').value.trim().toUpperCase();
-            const deptVal = document.getElementById('dept-filter').value;
-            const groupVal = document.getElementById('group-filter').value;
+            const brandVal = document.getElementById('brand-filter').value;
+            const genreVal = document.getElementById('genre-filter').value;
 
             overlay.style.display = 'flex';
 
             try {
-                let query = db.catalogue_articles;
+                let collection;
+                let isDirectArray = false;
 
                 // 1. Primary Filter (Index based if possible)
                 if (searchQuery) {
-                    if (/^\d{8,13}$/.test(searchQuery)) {
-                        // Gencod search
-                        const item = await db.catalogue_articles.get(searchQuery);
-                        query = item ? [item] : [];
+                    if (/^\d+$/.test(searchQuery)) {
+                        if (searchQuery.length >= 8) {
+                            const item = await db.catalogue_articles.get(searchQuery);
+                            if (item) {
+                                collection = [item];
+                                isDirectArray = true;
+                            } else {
+                                collection = db.catalogue_articles.where('gencod').startsWith(searchQuery);
+                            }
+                        } else {
+                            collection = db.catalogue_articles.where('gencod').startsWith(searchQuery);
+                        }
                     } else {
-                        // Ref search
-                        query = db.catalogue_articles.where('ref_article').startsWithIgnoreCase(searchQuery);
+                        collection = db.catalogue_articles.where('ref_article').startsWithIgnoreCase(searchQuery);
+                        const count = await collection.count();
+                        if (count === 0) {
+                            collection = db.catalogue_articles.where('libelle').startsWithIgnoreCase(searchQuery);
+                        }
                     }
-                } else if (deptVal !== "ALL") {
-                    query = db.catalogue_articles.where('departement').equals(deptVal);
-                } else if (groupVal !== "ALL") {
-                    query = db.catalogue_articles.where('groupe').equals(groupVal);
+                } else if (brandVal !== "ALL") {
+                    collection = db.catalogue_articles.where('brand').equals(brandVal);
+                } else if (genreVal !== "ALL") {
+                    collection = db.catalogue_articles.where('genre').equals(genreVal);
+                } else {
+                    collection = db.catalogue_articles;
                 }
 
-                // 2. Secondary Filtering (In-memory or Collection.filter)
-                let results;
-                if (Array.isArray(query)) {
-                    results = query;
+                // 2. Secondary Filtering
+                if (!isDirectArray) {
+                    if (searchQuery) {
+                        if (brandVal !== "ALL") {
+                            collection = collection.filter(item => item.brand === brandVal);
+                        }
+                        if (genreVal !== "ALL") {
+                            collection = collection.filter(item => item.genre === genreVal);
+                        }
+                    } else {
+                        if (brandVal !== "ALL" && genreVal !== "ALL") {
+                            collection = collection.filter(item => item.genre === genreVal);
+                        }
+                    }
                 } else {
-                    // Refine with and() for non-index filters
-                    if (searchQuery && deptVal !== "ALL") {
-                        query = query.filter(i => i.departement === deptVal);
+                    if (brandVal !== "ALL") {
+                        collection = collection.filter(item => item.brand === brandVal);
                     }
-                    if (groupVal !== "ALL" && (searchQuery || deptVal !== "ALL")) {
-                        query = query.filter(i => i.groupe === groupVal);
-                    } else if (groupVal !== "ALL" && !searchQuery && deptVal === "ALL") {
-                        // Already handled by initial where() if it was the first filter
+                    if (genreVal !== "ALL") {
+                        collection = collection.filter(item => item.genre === genreVal);
                     }
-                    
-                    // We need count for pagination
-                    const count = await query.count();
-                    document.getElementById('match-count').textContent = count.toLocaleString();
+                }
+
+                // 3. Pagination & Fetch
+                let results;
+                let count;
+
+                if (isDirectArray || Array.isArray(collection)) {
+                    count = collection.length;
+                    results = collection;
+                } else {
+                    count = await collection.count();
                     
                     const totalPages = Math.ceil(count / PAGE_SIZE) || 1;
                     document.getElementById('total-pages').textContent = totalPages;
@@ -417,45 +554,81 @@
                     document.getElementById('prev-page').disabled = currentPage <= 1;
                     document.getElementById('next-page').disabled = currentPage >= totalPages;
 
-                    results = await query
+                    results = await collection
                         .offset((currentPage - 1) * PAGE_SIZE)
                         .limit(PAGE_SIZE)
                         .toArray();
                 }
 
-                // 3. Render
+                document.getElementById('match-count').textContent = count.toLocaleString();
+                
+                if (isDirectArray || Array.isArray(collection)) {
+                    document.getElementById('total-pages').textContent = 1;
+                    document.getElementById('current-page').textContent = 1;
+                    document.getElementById('prev-page').disabled = true;
+                    document.getElementById('next-page').disabled = true;
+                }
+
+                // 4. Render
                 if (results.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 5rem; color: #333; font-family: \'Space Grotesk\'; font-weight: 800;">NO_DATA_MATCHED_FILTER_PARAMS</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 5rem; color: #333; font-family: \'Space Grotesk\'; font-weight: 800;">NO_DATA_MATCHED_FILTER_PARAMS</td></tr>';
                 } else {
-                    tbody.innerHTML = results.map(item => `
-                        <tr>
-                            <td class="mono-data">${item.gencod}</td>
-                            <td class="ref-cell">${item.ref_article}</td>
-                            <td>
-                                <span style="color: #eee;">${item.couleur || "-"}</span>
-                            </td>
-                            <td style="font-weight: 700;">${item.taille || "-"}</td>
-                            <td>
-                                <div style="display: flex; flex-wrap: wrap; gap: 4px;">
-                                    <span class="tag-pill" style="color: var(--industrial-orange); background: rgba(255,109,0,0.1);">${item.departement}</span>
-                                    <span class="tag-pill">${item.groupe}</span>
-                                    ${item.collection ? `<span class="tag-pill" style="opacity: 0.5;">${item.collection}</span>` : ""}
-                                </div>
-                            </td>
-                        </tr>
-                    `).join('');
+                    tbody.innerHTML = results.map(item => {
+                        let priceHtml = '';
+                        const prixTarif = parseFloat(item.prix_tarif);
+                        const prixReduit = parseFloat(item.prix_reduit);
+
+                        if (!isNaN(prixTarif)) {
+                            if (!isNaN(prixReduit) && prixReduit < prixTarif) {
+                                priceHtml = `
+                                    <div style="display: flex; flex-direction: column;">
+                                        <span style="text-decoration: line-through; color: #888; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace;">${prixTarif.toFixed(2)} €</span>
+                                        <span style="color: var(--accent-orange); font-weight: 800; font-family: 'JetBrains Mono', monospace;">${prixReduit.toFixed(2)} €</span>
+                                    </div>
+                                `;
+                            } else {
+                                priceHtml = `<span style="font-weight: 800; font-family: 'JetBrains Mono', monospace;">${prixTarif.toFixed(2)} €</span>`;
+                            }
+                        } else {
+                            priceHtml = `<span style="color: #888;">-</span>`;
+                        }
+
+                        const tags = [];
+                        if (item.brand) tags.push(`<span class="tag-pill" style="color: var(--accent-orange); background: rgba(255, 77, 0, 0.08); border-color: var(--accent-orange);">${item.brand}</span>`);
+                        if (item.genre) tags.push(`<span class="tag-pill">${item.genre}</span>`);
+                        if (item.groupe) tags.push(`<span class="tag-pill" style="opacity: 0.75;">${item.groupe}</span>`);
+                        if (item.type_article) tags.push(`<span class="tag-pill" style="opacity: 0.5;">${item.type_article}</span>`);
+                        
+                        const tagsHtml = `<div style="display: flex; flex-wrap: wrap; gap: 4px;">${tags.join('')}</div>`;
+
+                        return `
+                            <tr>
+                                <td class="mono-data">${item.gencod || "-"}</td>
+                                <td class="ref-cell">${item.ref_article || "-"}</td>
+                                <td style="font-weight: 500;">${item.libelle || "-"}</td>
+                                <td>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                        ${item.taille ? `<span class="tag-pill" style="background: #000; color: #fff; border-color: #000;">T. ${item.taille}</span>` : ""}
+                                        ${item.couleur ? `<span class="tag-pill" style="background: #eee; color: #000; border-color: #ccc;">${item.couleur}</span>` : ""}
+                                    </div>
+                                </td>
+                                <td>${priceHtml}</td>
+                                <td>${tagsHtml}</td>
+                            </tr>
+                        `;
+                    }).join('');
                 }
 
                 if (isInitialLoad) {
                     const total = await db.catalogue_articles.count();
                     document.getElementById('db-total').textContent = total.toLocaleString();
-                    populateFilters();
+                    await populateFilters();
                     isInitialLoad = false;
                 }
 
             } catch (err) {
                 console.error("[Explorer] Error:", err);
-                tbody.innerHTML = `<tr><td colspan="5" style="color: var(--industrial-orange); text-align: center; padding: 2rem;">CRITICAL_ERROR: ${err.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" style="color: var(--accent-orange); text-align: center; padding: 2rem;">CRITICAL_ERROR: ${err.message}</td></tr>`;
             } finally {
                 overlay.style.display = 'none';
             }
@@ -476,19 +649,19 @@
             };
 
             document.getElementById('search-input').addEventListener('input', triggerUpdate);
-            document.getElementById('dept-filter').addEventListener('change', triggerUpdate);
-            document.getElementById('group-filter').addEventListener('change', triggerUpdate);
+            document.getElementById('brand-filter').addEventListener('change', triggerUpdate);
+            document.getElementById('genre-filter').addEventListener('change', triggerUpdate);
             
             document.getElementById('btn-refresh').addEventListener('click', () => {
                 document.getElementById('search-input').value = "";
-                document.getElementById('dept-filter').value = "ALL";
-                document.getElementById('group-filter').value = "ALL";
+                document.getElementById('brand-filter').value = "ALL";
+                document.getElementById('genre-filter').value = "ALL";
                 currentPage = 1;
                 updateView();
             });
 
             document.getElementById('prev-page').addEventListener('click', () => {
-                if (currentPage > 1) { { currentPage--; updateView(); } }
+                if (currentPage > 1) { currentPage--; updateView(); }
             });
             document.getElementById('next-page').addEventListener('click', () => {
                 currentPage++; updateView();
