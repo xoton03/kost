@@ -229,59 +229,31 @@ async function searchArticles(query, limit = 50, brandFilter = "") {
         // 1. If local DB has items, search locally
         if (localCount > 0) {
             let tempResults = [];
-            
             if (cleanQuery) {
-                // A. Numeric query (gencod prefix)
-                if (/^\d+$/.test(cleanQuery)) {
-                    console.log(`[DB] Local search: Numeric query. Matching barcode: "${cleanQuery}"`);
-                    let gencodMatches = await db.catalogue_articles
-                        .where('gencod')
-                        .startsWith(cleanQuery)
-                        .toArray();
-                    tempResults.push(...gencodMatches);
-                    
-                    // Handle potential leading zero truncation from bigint database types
-                    if (tempResults.length === 0 && cleanQuery.startsWith('0')) {
-                        const strippedQuery = cleanQuery.replace(/^0+/, '');
-                        if (strippedQuery.length > 0) {
-                            console.log(`[DB] Local search: Stripping 0s and trying barcode: "${strippedQuery}"`);
-                            gencodMatches = await db.catalogue_articles
-                                .where('gencod')
-                                .startsWith(strippedQuery)
-                                .toArray();
-                            tempResults.push(...gencodMatches);
-                        }
-                    }
-                } else {
-                    // B. Alphanumeric query: Reference startsWith
-                    console.log(`[DB] Local search: Alphanumeric reference search: "${cleanQuery}"`);
-                    const refMatches = await db.catalogue_articles
-                        .where('ref_article')
-                        .startsWithIgnoreCase(cleanQuery)
-                        .toArray();
-                    tempResults.push(...refMatches);
-                    
-                    // C. Brand startsWith search
-                    console.log(`[DB] Local search: Matching brand: "${cleanQuery}"`);
-                    const brandMatches = await db.catalogue_articles
-                        .where('brand')
-                        .startsWithIgnoreCase(cleanQuery)
-                        .toArray();
-                    for (const item of brandMatches) {
-                        if (!tempResults.some(r => r.gencod === item.gencod)) {
-                            tempResults.push(item);
-                        }
-                    }
-
-                    // D. Item label startsWith search
-                    console.log(`[DB] Local search: Matching libelle: "${cleanQuery}"`);
-                    const libMatches = await db.catalogue_articles
-                        .where('libelle')
-                        .startsWithIgnoreCase(cleanQuery)
-                        .toArray();
-                    for (const item of libMatches) {
-                        if (!tempResults.some(r => r.gencod === item.gencod)) {
-                            tempResults.push(item);
+                const queryLower = cleanQuery.toLowerCase();
+                const isNumeric = /^\d+$/.test(cleanQuery);
+                
+                tempResults = await db.catalogue_articles
+                    .filter(item => {
+                        const matchGencod = item.gencod && item.gencod.includes(cleanQuery);
+                        const matchRef = item.ref_article && item.ref_article.toLowerCase().includes(queryLower);
+                        const matchLibelle = item.libelle && item.libelle.toLowerCase().includes(queryLower);
+                        const matchBrand = item.brand && item.brand.toLowerCase().includes(queryLower);
+                        return matchGencod || matchRef || matchLibelle || matchBrand;
+                    })
+                    .toArray();
+                
+                // Handle potential leading zero truncation from bigint database types
+                if (isNumeric && cleanQuery.startsWith('0')) {
+                    const strippedQuery = cleanQuery.replace(/^0+/, '');
+                    if (strippedQuery.length > 0) {
+                        const extraMatches = await db.catalogue_articles
+                            .filter(item => item.gencod && item.gencod.includes(strippedQuery))
+                            .toArray();
+                        for (const m of extraMatches) {
+                            if (!tempResults.some(r => r.gencod === m.gencod)) {
+                                tempResults.push(m);
+                            }
                         }
                     }
                 }
@@ -338,7 +310,7 @@ async function searchSupabase(query, limit = 50) {
     const encodedQuery = encodeURIComponent(cleanQuery);
     let url = `${SUPABASE_URL}/rest/v1/base_flo-new?select=*&limit=${limit}`;
     if (isNumeric) {
-        url += `&or=("Code-barres article".eq.${encodedQuery},Ref.ilike.${encodedQuery}%)`;
+        url += `&or=("Code-barres article".eq.${encodedQuery},Ref.ilike.${encodedQuery}%,"Nom de l'article".ilike.%${encodedQuery}%,Brand.ilike.${encodedQuery}%)`;
     } else {
         url += `&or=(Ref.ilike.${encodedQuery}%,"Nom de l'article".ilike.%${encodedQuery}%,Brand.ilike.${encodedQuery}%)`;
     }
@@ -390,7 +362,7 @@ async function searchSupabaseFiltered(query, brandFilter, limit = 50) {
         const isNumeric = /^\d+$/.test(cleanQuery);
         const encodedQuery = encodeURIComponent(cleanQuery);
         if (isNumeric) {
-            conditions.push(`or=("Code-barres article".eq.${encodedQuery},Ref.ilike.${encodedQuery}%)`);
+            conditions.push(`or=("Code-barres article".eq.${encodedQuery},Ref.ilike.${encodedQuery}%,"Nom de l'article".ilike.%${encodedQuery}%,Brand.ilike.${encodedQuery}%)`);
         } else {
             conditions.push(`or=(Ref.ilike.${encodedQuery}%,"Nom de l'article".ilike.%${encodedQuery}%,Brand.ilike.${encodedQuery}%)`);
         }
