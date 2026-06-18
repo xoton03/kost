@@ -116,7 +116,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Shared Clock logic for secondary pages (which don't load js/ui.js and app.js)
+    if (!window.updateClock) {
+        window.updateClock = function() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            const secStr = now.getSeconds().toString().padStart(2, '0');
+            const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            const formattedDate = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
 
+            const timeElement = document.getElementById('current-time');
+            const secondsElement = document.getElementById('current-seconds');
+            const dateElement = document.getElementById('current-date');
+            const clockContainer = document.getElementById('clock-container');
+            
+            if (timeElement) timeElement.textContent = timeStr;
+            if (secondsElement) secondsElement.textContent = secStr;
+            if (dateElement) dateElement.textContent = formattedDate;
+
+            // Day-based coloring
+            const dayIndex = now.getDay(); // 0 (Sun) to 6 (Sat)
+            const dayColor = `var(--day-${dayIndex})`;
+            
+            if (clockContainer) clockContainer.style.borderColor = dayColor;
+            if (secondsElement) secondsElement.style.color = dayColor;
+            if (dateElement) dateElement.style.color = dayColor;
+        };
+    }
+
+    if (document.getElementById('clock-container') && !document.querySelector('script[src="app.js"]')) {
+        window.updateClock();
+        setInterval(window.updateClock, 1000);
+    }
 
     // Global icon initialization
     if (window.initLucide) {
