@@ -177,7 +177,7 @@ function addToRecentSearches(query, firstResult, type) {
 // Price Formatting Helper (French style thousands dot separator)
 function formatPrice(val) {
     if (val === undefined || val === null || val === '') return '--';
-    const clean = String(val).replace(/[\.,\s]/g, '');
+    const clean = String(val).replace(/[.,\s]/g, '');
     const num = parseFloat(clean);
     if (isNaN(num)) return val;
     return Math.round(num).toString();
@@ -556,7 +556,7 @@ function getBrandLogo(brandName) {
                 <text x="70" y="21" font-family="'Space Grotesk', sans-serif" font-weight="900" font-size="11" fill="#FFFFFF" letter-spacing="2" text-anchor="middle">FLOGART</text>
             </svg>`;
 
-        default:
+        default: {
             // Custom HSL gradient badge monogram fallback for generic/minor brands
             const cleanName = cleanBrand.replace(/[^A-Z0-9\s]/g, '').trim();
             // Create a deterministic hash from the brand name
@@ -579,6 +579,7 @@ function getBrandLogo(brandName) {
                 <rect width="140" height="32" fill="#0A0A0A" />
                 <text x="70" y="21" font-family="'Space Grotesk', sans-serif" font-weight="900" font-size="12" fill="${textCol}" letter-spacing="1.5" text-anchor="middle" filter="url(#fallback-glow-${hue})">${displayBrand}</text>
             </svg>`;
+        }
     }
 }
 
@@ -672,7 +673,7 @@ function closePrintModal() {
 
 
 // Toast notification container
-function showToast(message, type = 'success') {
+window.showToast = function(message, type = 'success') {
     const container = document.getElementById('toast-container');
     if (!container) return;
     const toast = document.createElement('div');
@@ -706,7 +707,7 @@ function debouncedSearch() {
     }, 150);
 }
 
-async function performSearch(force = false) {
+window.performSearch = async function(force = false) {
     if (!searchInput) {
         console.error('[Flo UI] performSearch failed: searchInput is not initialized');
         return;
@@ -953,7 +954,7 @@ async function startScanner() {
         if (statusEl) statusEl.textContent = 'ACTIVE_READY';
 
         // Apply continuous autofocus constraint after start (with delay to ensure track is active)
-        async function applyFocusConstraint() {
+        const applyFocusConstraint = async () => {
             try {
                 if (html5QrCode && html5QrCode.isScanning) {
                     await html5QrCode.applyVideoConstraints({
@@ -964,7 +965,7 @@ async function startScanner() {
             } catch (err) {
                 console.warn('[Flo Scanner] Could not set focusMode continuous:', err);
             }
-        }
+        };
         
         setTimeout(applyFocusConstraint, 1500);
 
@@ -1205,14 +1206,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (btnQtyMinus && qtyInput) {
         btnQtyMinus.addEventListener('click', () => {
-            let val = parseInt(qtyInput.value) || 1;
+            const val = parseInt(qtyInput.value) || 1;
             if (val > 1) qtyInput.value = val - 1;
         });
     }
     
     if (btnQtyPlus && qtyInput) {
         btnQtyPlus.addEventListener('click', () => {
-            let val = parseInt(qtyInput.value) || 1;
+            const val = parseInt(qtyInput.value) || 1;
             if (val < 99) qtyInput.value = val + 1;
         });
     }

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kost-v21';
+const CACHE_NAME = 'kost-v22';
 const urlsToCache = [
   './',
   './index.html',
@@ -18,11 +18,19 @@ const urlsToCache = [
   './lucide.js',
   './jsbarcode.js',
   './supabase.js',
+  './config.js',
+  './offline.html',
+  './js/state.js',
+  './js/ui.js',
+  './js/scanner.js',
+  './js/modals.js',
+  './js/bg3d.js',
   './assets/favicon.png',
   './assets/logo.png'
 ];
 
 self.addEventListener('install', event => {
+  self.skipWaiting(); // Automatic skip waiting when new SW is detected
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -48,16 +56,71 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Cache hit - return response
-        if (response) {
+  const url = new URL(event.request.url);
+
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // Check if it's a Supabase/GAS API request
+  const isApiRequest = url.href.includes('supabase.co') || url.href.includes('script.google.com');
+
+  if (isApiRequest) {
+    // Network First strategy
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response && response.status === 200) {
+            const responseClone = response.clone();
+            caches.open('api-cache').then(cache => {
+              cache.put(event.request, responseClone);
+            });
+          }
           return response;
-        }
-        return fetch(event.request);
+        })
+        .catch(() => {
+          return caches.match(event.request);
+        })
+    );
+  } else if (
+    url.pathname.endsWith('.js') ||
+    url.pathname.endsWith('.css') ||
+    url.href.includes('fonts.googleapis.com') ||
+    url.href.includes('fonts.gstatic.com') ||
+    url.pathname.includes('/assets/')
+  ) {
+    // Stale-While-Revalidate strategy
+    event.respondWith(
+      caches.open(CACHE_NAME).then(cache => {
+        return cache.match(event.request).then(cachedResponse => {
+          const fetchPromise = fetch(event.request).then(networkResponse => {
+            if (networkResponse && networkResponse.status === 200) {
+              cache.put(event.request, networkResponse.clone());
+            }
+            return networkResponse;
+          });
+          return cachedResponse || fetchPromise;
+        });
       })
-  );
+    );
+  } else {
+    // Cache First with Network Fallback (and navigate mode offline.html fallback)
+    event.respondWith(
+      caches.match(event.request)
+        .then(response => {
+          if (response) {
+            return response;
+          }
+          return fetch(event.request).catch(err => {
+            if (event.request.mode === 'navigate') {
+              return caches.match('./offline.html');
+            }
+            throw err;
+          });
+        })
+    );
+  }
 });
 
 self.addEventListener('message', event => {

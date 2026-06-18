@@ -3,10 +3,12 @@
  * Centralized IndexedDB for all modules (Checkage, Tic-Tache, Flo).
  */
 
-window.SUPABASE_URL = window.SUPABASE_URL || "https://jphzmgscxpejcyjlnspq.supabase.co";
-window.SUPABASE_KEY = window.SUPABASE_KEY || "sb_publishable_gshF6Y08DYJYO9c8Z_Cv2Q_9nEZr7J9";
+window.KostConfig = window.KostConfig || { SUPABASE_URL: "", SUPABASE_KEY: "", GAS_URL: "" };
+window.SUPABASE_URL = window.KostConfig.SUPABASE_URL || "";
+window.SUPABASE_KEY = window.KostConfig.SUPABASE_KEY || "";
 
 // Initialize Dexie
+// eslint-disable-next-line no-redeclare
 const db = new Dexie("KostSharedDB");
 
 // Schema Definition (V9)
@@ -17,7 +19,7 @@ db.version(5).stores({
 // Safeguard for primary key changes: 
 // Dexie doesn't support changing the primary key on an existing table.
 // If it happens (UpgradeError), we delete the DB and reload to start fresh.
-db.open().catch("UpgradeError", function (err) {
+db.open().catch("UpgradeError", function () {
     console.warn("[DB] Schema mismatch (Primary Key change). Deleting database to fix...");
     db.delete().then(() => {
         console.log("[DB] Database deleted. Reloading page...");
@@ -42,7 +44,7 @@ async function requestPersistence() {
  * @param {Function} onProgress Callback for UI updates (current, total, eta)
  * @param {Boolean} isResume If true, don't clear the table and start from existing count
  */
-async function syncCatalogue(onProgress, isResume = false) {
+window.syncCatalogue = async function(onProgress, isResume = false) {
     console.log(`[DB] Starting ${isResume ? 'RESUME' : 'FULL'} synchronization (V7 FORCE)...`);
     
     // 1. Get total count
@@ -74,7 +76,7 @@ async function syncCatalogue(onProgress, isResume = false) {
     const chunkSize = 1000; // Smaller chunks for stability
     const delay = 200;      // 200ms breathe time
     let totalSaved = offset;
-    let startTime = Date.now();
+    const startTime = Date.now();
     
     while (totalSaved < totalItems) {
         const end = Math.min(totalSaved + chunkSize - 1, totalItems - 1);
@@ -149,7 +151,7 @@ async function syncCatalogue(onProgress, isResume = false) {
 /**
  * Search: Get unique colors for a reference
  */
-async function getColors(ref) {
+window.getColors = async function(ref) {
     const cleanRef = String(ref || "").trim().toUpperCase();
     console.log(`[DB] Recherche couleurs pour ref: ${cleanRef}`);
     try {
@@ -168,7 +170,7 @@ async function getColors(ref) {
 /**
  * Search: Get unique sizes for a ref/color pair
  */
-async function getSizes(ref, color) {
+window.getSizes = async function(ref, color) {
     const cleanRef = String(ref || "").trim().toUpperCase();
     const cleanColor = String(color || "").trim().toUpperCase();
     console.log(`[DB] Recherche tailles pour ref: ${cleanRef}, couleur: ${cleanColor}`);
@@ -188,7 +190,7 @@ async function getSizes(ref, color) {
 /**
  * Search: Get full article details
  */
-async function getArticle(ref, color, size) {
+window.getArticle = async function(ref, color, size) {
     const cleanRef = String(ref || "").trim().toUpperCase();
     const cleanColor = String(color || "").trim().toUpperCase();
     const cleanSize = String(size || "").trim().toUpperCase();
@@ -208,7 +210,7 @@ async function getArticle(ref, color, size) {
 /**
  * Search: Get article by Gencod
  */
-async function getArticleByGencod(gencod) {
+window.getArticleByGencod = async function(gencod) {
     const val = typeof gencod === 'string' ? gencod : String(gencod);
     return await db.catalogue_articles.get(val);
 }
@@ -216,7 +218,7 @@ async function getArticleByGencod(gencod) {
 /**
  * Search: Flexible search for Flo (Ref or Gencod)
  */
-async function searchArticles(query, limit = 50, brandFilter = "") {
+window.searchArticles = async function(query, limit = 50, brandFilter = "") {
     console.log(`[DB] searchArticles called with query: "${query}", limit: ${limit}, brandFilter: "${brandFilter}"`);
     
     // If both query and brandFilter are empty, return empty
@@ -290,7 +292,7 @@ async function searchArticles(query, limit = 50, brandFilter = "") {
         // 2. Fallback to Supabase search if we are online AND (local DB is empty OR local search returned 0 results)
         if (isOnline && (localCount === 0 || results.length === 0)) {
             console.log(`[DB] Online fallback: Querying Supabase for "${cleanQuery}" (Brand filter: "${cleanBrandFilter}")...`);
-            const supabaseResults = await searchSupabaseFiltered(cleanQuery, cleanBrandFilter, limit);
+            const supabaseResults = await window.searchSupabaseFiltered(cleanQuery, cleanBrandFilter, limit);
             results.push(...supabaseResults);
         }
         
@@ -305,7 +307,7 @@ async function searchArticles(query, limit = 50, brandFilter = "") {
 /**
  * Direct Supabase Search (fallback when local DB is empty or missing query)
  */
-async function searchSupabase(query, limit = 50) {
+window.searchSupabase = async function(query, limit = 50) {
     const cleanQuery = query.trim();
     if (!cleanQuery) return [];
 
@@ -353,7 +355,7 @@ async function searchSupabase(query, limit = 50) {
     }
 }
 
-async function searchSupabaseFiltered(query, brandFilter, limit = 50) {
+window.searchSupabaseFiltered = async function(query, brandFilter, limit = 50) {
     const cleanQuery = query.trim();
     const cleanBrand = brandFilter.trim();
     if (!cleanQuery && !cleanBrand) return [];

@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!navDrawer || !navBackdrop) {
         console.warn('Navigation drawer elements not found in DOM. Navigation logic skipped.');
     } else {
-        function openDrawer(e) {
+        const openDrawer = (e) => {
             if (e) e.preventDefault();
             navBackdrop.classList.remove('hidden');
             document.body.style.overflow = 'hidden'; // Lock scroll
@@ -22,9 +22,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 navBackdrop.classList.add('opacity-100');
                 navDrawer.classList.remove('-translate-x-full');
             }, 10);
-        }
+        };
 
-        function closeDrawer(e) {
+        const closeDrawer = (e) => {
             if (e) e.preventDefault();
             navBackdrop.classList.remove('opacity-100');
             navDrawer.classList.add('-translate-x-full');
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 navBackdrop.classList.add('hidden');
                 document.body.style.overflow = ''; // Restore scroll
             }, 300);
-        }
+        };
 
         // Event Listeners
         if (logoTrigger || hamburgerTrigger) {
@@ -89,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (typeof showToast === 'function') {
                                     showToast("AUCUNE MISE À JOUR DISPONIBLE", "success");
                                 } else {
+                                    // eslint-disable-next-line no-alert
                                     alert("AUCUNE MISE À JOUR DISPONIBLE");
                                 }
                             }
@@ -108,57 +109,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         }, 1000);
                     }
                 } else {
+                    // eslint-disable-next-line no-alert
                     alert("Les Service Workers ne sont pas supportés sur ce navigateur.");
                 }
             });
         }
     }
 
-    // ============================================================
-    // GLOBAL CLOCK LOGIC
-    // ============================================================
-    function updateClock() {
-        const timeEl = document.getElementById('current-time');
-        const secondsEl = document.getElementById('current-seconds');
-        const dateEl = document.getElementById('current-date');
-        const container = document.getElementById('clock-container');
 
-        if (!timeEl) return;
-
-        const now = new Date();
-        const hh = String(now.getHours()).padStart(2, '0');
-        const mm = String(now.getMinutes()).padStart(2, '0');
-        const ss = String(now.getSeconds()).padStart(2, '0');
-        
-        // Date formatting
-        const dateStr = now.toLocaleDateString('fr-FR', { 
-            weekday: 'long', 
-            day: 'numeric', 
-            month: 'long', 
-            year: 'numeric' 
-        });
-        const formattedDate = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-
-        // Update Text
-        timeEl.textContent = `${hh}:${mm}`;
-        if (secondsEl) secondsEl.textContent = ss;
-        if (dateEl) dateEl.textContent = formattedDate;
-
-        // Day-based coloring
-        const dayIndex = now.getDay();
-        const dayColor = `var(--day-${dayIndex})`;
-        
-        if (container) container.style.borderColor = dayColor;
-        if (secondsEl) secondsEl.style.color = dayColor;
-        if (dateEl) dateEl.style.color = dayColor;
-    }
-
-    // Initial run and interval
-    updateClock();
-    setInterval(updateClock, 1000);
 
     // Global icon initialization
-    if (window.lucide) {
-        lucide.createIcons();
+    if (window.initLucide) {
+        window.initLucide();
     }
 });

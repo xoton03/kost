@@ -1,873 +1,72 @@
-// State Management
-let inventory = [];
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyLTx3UJtcZ96MNOYq7Kdkm8BDcOYzu-gLOkFDALPpdzrGmsKsUx_IdOZenLq8a0AdM-w/exec';
+// K.O.S.T. - App Entry Point & Orchestrator
 
-// Supabase Config
-window.SUPABASE_URL = window.SUPABASE_URL || "https://jphzmgscxpejcyjlnspq.supabase.co";
-window.SUPABASE_KEY = window.SUPABASE_KEY || "sb_publishable_gshF6Y08DYJYO9c8Z_Cv2Q_9nEZr7J9";
-
-// Supabase Helper
-async function supabaseFetch(table, select = '*', filters = {}, options = {}) {
-    let url = `${SUPABASE_URL}/rest/v1/${table}?select=${select}`;
-    Object.entries(filters).forEach(([key, val]) => {
-        url += `&${key}=eq.${encodeURIComponent(val)}`;
-    });
-    
-    if (options.order) {
-        url += `&order=${options.order}`;
-    }
-    if (options.limit) {
-        url += `&limit=${options.limit}`;
-    }
-    
-    const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-            'apikey': SUPABASE_KEY,
-            'Authorization': `Bearer ${SUPABASE_KEY}`,
-            'Content-Type': 'application/json'
-        }
-    });
-    
-    if (!response.ok) throw new Error('Erreur réseau Supabase');
-    return await response.json();
-}
-
-// Persistence Logic
-function saveToLocal() {
-    localStorage.setItem('kost_backup', JSON.stringify(inventory));
-}
-
-function loadFromLocal() {
-    const backup = localStorage.getItem('kost_backup');
-    if (backup) {
-        try {
-            inventory = JSON.parse(backup);
-            renderList();
-            showToast('Données locales restaurées.', 'success');
-        } catch (e) {
-            console.error('Erreur LocalStorage:', e);
-        }
-    }
-}
-
-function clearCache() {
-    if (confirm('Voulez-vous vraiment vider le cache local ? Cela supprimera tous les scans non synchronisés.')) {
-        localStorage.removeItem('kost_backup');
-        inventory = [];
-        renderList();
-        showToast('Cache vidé.', 'error');
-    }
-}
-
-const form = document.getElementById('stock-form');
-const inventoryList = document.getElementById('inventory-list');
-const emptyState = document.getElementById('empty-state');
-const itemCountSpan = document.getElementById('item-count');
-const statValidated = document.getElementById('stat-validated');
-const statPending = document.getElementById('stat-pending');
-const btnCloud = document.getElementById('btn-cloud');
-const btnRefresh = document.getElementById('btn-refresh');
-const toastContainer = document.getElementById('toast-container');
-const dbStatus = document.getElementById('db-status');
-const barcodeInput = document.getElementById('barcode');
-const emplacementInput = document.getElementById('emplacement');
-
-// Modal Elements
-const searchModal = document.getElementById('search-modal');
-const modalContent = document.getElementById('modal-content');
-const btnOpenSearch = document.getElementById('btn-open-search');
-const btnCloseModal = document.getElementById('btn-close-modal');
-const modalSearchForm = document.getElementById('modal-search-form');
-const searchLoader = document.getElementById('search-loader');
-
-
-
-// Initialize Lucide Icons
-lucide.createIcons();
-
-
-
-// ============================================================
-// 3D PERSPECTIVE GRID BACKGROUND
-// Creates a warehouse-floor depth effect without touching the UI.
-// ============================================================
-(function initBg3D() {
-    const canvas = document.createElement('canvas');
-    canvas.id = 'bg-canvas';
-    document.body.insertBefore(canvas, document.body.firstChild);
-    const ctx = canvas.getContext('2d');
-
-    const BG_COLOR  = '#0A0A0A';
-    const GRID_COLOR = '59, 130, 246'; // #3B82F6 blue in RGB
-
-    // Vanishing-point target (follows mouse on desktop)
-    let targetVpX = 0.5, targetVpY = 0.42;
-    let currentVpX = 0.5, currentVpY = 0.42;
-
-    const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-
-    if (!isTouchDevice) {
-        document.addEventListener('mousemove', (e) => {
-            // Map mouse to a narrow range around center for subtle parallax
-            targetVpX = 0.38 + (e.clientX / window.innerWidth) * 0.24;
-            targetVpY = 0.35 + (e.clientY / window.innerHeight) * 0.14;
-        });
-    }
-
-    let W, H;
-    function resize() {
-        W = canvas.width  = window.innerWidth;
-        H = canvas.height = window.innerHeight;
-    }
-    resize();
-    window.addEventListener('resize', resize);
-
-    const COLS = 14;   // vertical fan lines
-    const ROWS = 10;   // horizontal floor lines
-    const SPEED = 0.25; // px per frame for floor animation
-    let floorOffset = 0;
-
-    function draw() {
-        // Smooth VP tracking
-        currentVpX += (targetVpX - currentVpX) * 0.04;
-        currentVpY += (targetVpY - currentVpY) * 0.04;
-
-        const vpX = W * currentVpX;
-        const vpY = H * currentVpY;
-
-        // Fill background
-        ctx.fillStyle = BG_COLOR;
-        ctx.fillRect(0, 0, W, H);
-
-        // Animate floor offset
-        floorOffset = (floorOffset + SPEED) % (H / ROWS);
-
-        // --- Draw radial fan lines (vertical perspective) ---
-        for (let i = 0; i <= COLS; i++) {
-            const t = i / COLS;
-            const startX = t * W;
-            // Lines near center edges are brighter
-            const edgeness = Math.abs(t - 0.5) * 2; // 0=center, 1=edge
-            const alpha = 0.018 + edgeness * 0.022;
-            ctx.beginPath();
-            ctx.moveTo(vpX, vpY);
-            ctx.lineTo(startX, H);
-            ctx.strokeStyle = `rgba(${GRID_COLOR}, ${alpha})`;
-            ctx.lineWidth = 0.6;
-            ctx.stroke();
-        }
-
-        // --- Draw receding horizontal floor lines ---
-        for (let i = 0; i <= ROWS + 1; i++) {
-            // Perspective: lines compress toward VP (power curve)
-            const progress = i / ROWS;
-            const perspY = vpY + (H - vpY) * Math.pow(progress, 0.55) + floorOffset * Math.pow(progress, 0.55);
-            if (perspY > H || perspY < vpY) continue;
-
-            // Horizontal spread at this depth
-            const perspT = Math.min(1, (perspY - vpY) / (H - vpY));
-            const xLeft  = vpX + (0 - vpX) * perspT;
-            const xRight = vpX + (W - vpX) * perspT;
-
-            const alpha = perspT * 0.055;
-            ctx.beginPath();
-            ctx.moveTo(xLeft, perspY);
-            ctx.lineTo(xRight, perspY);
-            ctx.strokeStyle = `rgba(${GRID_COLOR}, ${alpha})`;
-            ctx.lineWidth = 0.6;
-            ctx.stroke();
-        }
-
-        // Subtle radial vignette to fade edges gracefully
-        const vignette = ctx.createRadialGradient(vpX, vpY, 0, vpX, vpY, Math.max(W, H) * 0.9);
-        vignette.addColorStop(0, 'rgba(10,10,10,0)');
-        vignette.addColorStop(1, 'rgba(10,10,10,0.55)');
-        ctx.fillStyle = vignette;
-        ctx.fillRect(0, 0, W, H);
-
-        requestAnimationFrame(draw);
-    }
-    draw();
-})();
-
-// Update Clock
-function updateClock() {
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-    const secStr = now.getSeconds().toString().padStart(2, '0');
-    const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    const formattedDate = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-
-    // Desktop clock
-    const timeElement = document.getElementById('current-time');
-    const secondsElement = document.getElementById('current-seconds');
-    const dateElement = document.getElementById('current-date');
-    const clockContainer = document.getElementById('clock-container');
-    
-    if (timeElement) timeElement.textContent = timeStr;
-    if (secondsElement) secondsElement.textContent = secStr;
-    if (dateElement) dateElement.textContent = formattedDate;
-
-    // Day-based coloring
-    const dayIndex = now.getDay(); // 0 (Sun) to 6 (Sat)
-    const dayColor = `var(--day-${dayIndex})`;
-    
-    if (clockContainer) clockContainer.style.borderColor = dayColor;
-    if (secondsElement) secondsElement.style.color = dayColor;
-    if (dateElement) dateElement.style.color = dayColor;
-}
-setInterval(updateClock, 1000);
-updateClock();
-
-// Animate barcode placeholder: WAITING · WAITING.. · WAITING...
-(function animateBarcodeWaiting() {
-    const dots = ['', '.', '..', '...'];
-    let step = 0;
-    setInterval(() => {
-        // Only animate when the field is empty and not focused
-        if (barcodeInput && !barcodeInput.value && document.activeElement !== barcodeInput) {
-            barcodeInput.placeholder = 'WAITING' + dots[step];
-            step = (step + 1) % dots.length;
-        }
-    }, 500);
-})();
-
-// Modal Logic
-function resetModalState() {
-    const refInput = document.getElementById('modal-ref');
-    const colorSelect = document.getElementById('modal-color');
-    const sizeSelect = document.getElementById('modal-size');
-    const colorGroup = document.getElementById('color-group');
-    const sizeGroup = document.getElementById('size-group');
-    
-    if(refInput) refInput.value = '';
-    
-    if(colorSelect) {
-        colorSelect.innerHTML = '<option value="">Choisir une couleur...</option>';
-        colorSelect.value = '';
-    }
-    if(sizeSelect) {
-        sizeSelect.innerHTML = '<option value="">Choisir une taille...</option>';
-        sizeSelect.value = '';
-    }
-    
-    if(colorGroup) colorGroup.classList.add('hidden');
-    if(sizeGroup) sizeGroup.classList.add('hidden');
-    if(searchLoader) searchLoader.classList.add('hidden');
-}
-
-function openModal() {
-    resetModalState();
-    if (searchModal) {
-        searchModal.classList.remove('hidden');
-        searchModal.classList.add('flex');
-    }
-    setTimeout(() => {
-        if (modalContent) {
-            modalContent.classList.remove('scale-95', 'opacity-0');
-            modalContent.classList.add('scale-100', 'opacity-100');
-        }
-        const refInput = document.getElementById('modal-ref');
-        if (refInput) refInput.focus();
-    }, 10);
-}
-
-function closeModal() {
-    if (modalContent) {
-        modalContent.classList.remove('scale-100', 'opacity-100');
-        modalContent.classList.add('scale-95', 'opacity-0');
-    }
-    setTimeout(() => {
-        if (searchModal) {
-            searchModal.classList.add('hidden');
-            searchModal.classList.remove('flex');
-        }
-    }, 300);
-}
-
-if (btnOpenSearch) btnOpenSearch.addEventListener('click', openModal);
-if (btnCloseModal) btnCloseModal.addEventListener('click', closeModal);
-if (searchModal) {
-    searchModal.addEventListener('click', (e) => {
-        if (e.target === searchModal) closeModal();
-    });
-}
-
-// Automated Barcode Handling
-barcodeInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        performSearch();
-    }
-});
-
-// Cascade Funnel Logic (Supabase)
-const modalRef = document.getElementById('modal-ref');
-const modalColor = document.getElementById('modal-color');
-const modalSize = document.getElementById('modal-size');
-const colorGroup = document.getElementById('color-group');
-const sizeGroup = document.getElementById('size-group');
-
-if (modalRef) {
-    modalRef.addEventListener('input', async (e) => {
-        let val = e.target.value.trim();
-        if (val.length === 5) {
-            val = val.toUpperCase();
-            e.target.value = val;
-            e.target.blur(); // Dismiss keyboard on mobile
-            
-            searchLoader.classList.remove('hidden');
-            colorGroup.classList.add('hidden');
-            sizeGroup.classList.add('hidden');
-
-            try {
-                const uniqueColors = await getColors(val);
-                
-                if (uniqueColors && uniqueColors.length > 0) {
-                    modalColor.innerHTML = '<option value="">Choisir une couleur...</option>';
-                    uniqueColors.forEach(color => {
-                        modalColor.innerHTML += `<option value="${color}">${color}</option>`;
-                    });
-                    colorGroup.classList.remove('hidden');
-                } else {
-                    showToast('Référence introuvable localement', 'error');
-                }
-            } catch (err) {
-                console.error(err);
-                showToast('Erreur recherche locale', 'error');
-            } finally {
-                searchLoader.classList.add('hidden');
-            }
-        } else {
-            colorGroup.classList.add('hidden');
-            sizeGroup.classList.add('hidden');
-        }
-    });
-}
-
-if (modalColor) {
-    modalColor.addEventListener('change', async (e) => {
-        const color = e.target.value;
-        const ref = modalRef.value;
-        
-        if (!color) {
-            sizeGroup.classList.add('hidden');
-            return;
-        }
-
-        searchLoader.classList.remove('hidden');
-        sizeGroup.classList.add('hidden');
-
-        try {
-            const uniqueSizes = await getSizes(ref, color);
-            
-            if (uniqueSizes && uniqueSizes.length > 0) {
-                modalSize.innerHTML = '<option value="">Choisir une taille...</option>';
-                uniqueSizes.forEach(size => {
-                    modalSize.innerHTML += `<option value="${size}">${size}</option>`;
-                });
-                sizeGroup.classList.remove('hidden');
-            }
-        } catch (err) {
-            console.error(err);
-            showToast('Erreur recherche locale', 'error');
-        } finally {
-            searchLoader.classList.add('hidden');
-        }
-    });
-}
-
-if (modalSize) {
-    modalSize.addEventListener('change', async (e) => {
-        const size = e.target.value;
-        const ref = modalRef.value;
-        const color = modalColor.value;
-
-        if (!size) return;
-
-        searchLoader.classList.add('hidden');
-
-        try {
-            const article = await getArticle(ref, color, size);
-            
-            if (article) {
-                const barcode = article.gencod;
-                const collection = article.collection;
-                
-                console.log(`Collection identifiée : ${collection}`);
-                barcodeInput.value = barcode;
-                closeModal();
-                showToast(`Article identifié (${collection}) : ${barcode}`, 'success');
-                
-                // Insertion directe
-                performSearch();
-            } else {
-                showToast('Article introuvable', 'error');
-            }
-        } catch (err) {
-            console.error(err);
-            showToast('Erreur recherche locale', 'error');
-        } finally {
-            searchLoader.classList.add('hidden');
-        }
-    });
-}
-
-
-// Main Search Logic
-function performSearch() {
-    const barcode = barcodeInput.value.trim();
-    if (!barcode) return;
-
-    const newItem = {
-        id: Date.now(),
-        uuid: crypto.randomUUID(),
-        barcode: barcode,
-        emplacement: emplacementInput.value || 'N/A',
-        timestamp: new Date().toLocaleTimeString('fr-FR'),
-        status: 'En attente'
-    };
-
-    inventory.unshift(newItem);
-    renderList();
-    
-    barcodeInput.value = '';
-    barcodeInput.focus();
-}
-
-// Render List
-function renderList() {
-    if (inventory.length === 0) {
-        inventoryList.innerHTML = '';
-        inventoryList.appendChild(emptyState);
-    } else {
-        emptyState.remove();
-        inventoryList.innerHTML = inventory.map((item, index) => {
-            let statusClass = 'status-pending';
-            let dotColor = 'bg-yellow-400';
-            
-            if (item.status === 'Validé (Cloud)') {
-                statusClass = 'status-cloud';
-                dotColor = 'bg-cyan-400';
-            } else if (item.status === 'Validé') {
-                statusClass = 'status-validated';
-                dotColor = 'bg-[#00FFC2]';
-            } else if (item.status === 'Supprimé (Cloud)') {
-                statusClass = 'status-deleted';
-                dotColor = 'bg-red-500';
-            }
-
-            const rowClass = item.status === 'Supprimé (Cloud)' 
-                ? 'row-deleted animate-entrance group hover:bg-white/[0.03] transition-all border-b border-white/[0.03]' 
-                : 'animate-entrance group hover:bg-white/[0.03] transition-all border-b border-white/[0.03]';
-
-            // Barcode dynamic styling
-            const barcodeStr = String(item.barcode || '').trim();
-            const barcodeColor = barcodeStr.length === 13 ? 'text-white' : 'text-red-500 font-black';
-            
-            // Icon selection
-            let statusIcon = 'hourglass'; 
-            if (item.status === 'Validé (Cloud)') statusIcon = 'cloud-check';
-            if (item.status === 'Supprimé (Cloud)') statusIcon = 'cloud-off';
-            if (item.status === 'Validé') statusIcon = 'check-circle';
-
-            return `
-                <tr class="${rowClass}" style="animation-delay: ${index * 40}ms">
-                    <td class="px-8 py-5">
-                        <div class="flex flex-col">
-                            <span class="font-bold text-white tracking-tight">${item.emplacement}</span>
-                            <span class="text-[9px] text-slate-600 font-bold uppercase tracking-widest mt-0.5">${item.timestamp}</span>
-                        </div>
-                    </td>
-                    <td class="px-8 py-5">
-                        <span class="font-mono ${barcodeColor} tracking-widest text-sm transition-colors">${item.barcode}</span>
-                    </td>
-                    <td class="px-8 py-5">
-                        <span class="status-pill ${statusClass}">
-                            <i data-lucide="${statusIcon}" class="w-3 h-3"></i>
-                            ${item.status}
-                        </span>
-                    </td>
-                    <td class="px-8 py-5 text-right flex justify-end gap-2">
-                        <button id="btn-edit-${item.id}" onclick="editItem(${item.id})" class="text-slate-700 hover:text-cyan-400 p-2 transition-all hover:scale-110 active:scale-90">
-                            <i data-lucide="pencil" class="w-5 h-5"></i>
-                        </button>
-                        <button id="btn-delete-${item.id}" onclick="deleteItem(${item.id})" class="text-slate-700 hover:text-red-400 p-2 transition-all hover:scale-110 active:scale-90">
-                            <i data-lucide="trash-2" class="w-5 h-5"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-        lucide.createIcons();
-    }
-
-    itemCountSpan.textContent = `${inventory.length} article${inventory.length > 1 ? 's' : ''}`;
-    statValidated.textContent = inventory.filter(i => i.status.includes('Validé')).length;
-    statPending.textContent = inventory.filter(i => i.status === 'En attente').length;
-    
-    // Sauvegarde auto à chaque changement de l'état
-    saveToLocal();
-}
-
-// Edit Item UI Logic
-const editModal = document.getElementById('edit-modal');
-const editModalContent = document.getElementById('edit-modal-content');
-const btnCloseEdit = document.getElementById('btn-close-edit');
-const modalEditForm = document.getElementById('modal-edit-form');
-
-window.editItem = (id) => {
-    const item = inventory.find(i => i.id === id);
-    if (!item) return;
-    
-    document.getElementById('edit-id').value = item.id;
-    document.getElementById('edit-uuid').value = item.uuid || '';
-    document.getElementById('edit-emplacement').value = item.emplacement;
-    document.getElementById('edit-barcode').value = item.barcode;
-    
-    if (editModal) {
-        editModal.classList.remove('hidden');
-        editModal.classList.add('flex');
-    }
-    setTimeout(() => {
-        if (editModalContent) {
-            editModalContent.classList.remove('scale-95', 'opacity-0');
-            editModalContent.classList.add('scale-100', 'opacity-100');
-        }
-        document.getElementById('edit-emplacement').focus();
-    }, 10);
-};
-
-function closeModalEdit() {
-    if (editModalContent) {
-        editModalContent.classList.remove('scale-100', 'opacity-100');
-        editModalContent.classList.add('scale-95', 'opacity-0');
-    }
-    setTimeout(() => {
-        if (editModal) {
-            editModal.classList.add('hidden');
-            editModal.classList.remove('flex');
-        }
-    }, 300);
-}
-
-if (btnCloseEdit) btnCloseEdit.addEventListener('click', closeModalEdit);
-if (editModal) {
-    editModal.addEventListener('click', (e) => {
-        if (e.target === editModal) closeModalEdit();
-    });
-}
-
-// Copy Barcode from Edit Modal
-const btnCopyEditBarcode = document.getElementById('btn-copy-edit-barcode');
-if (btnCopyEditBarcode) {
-    btnCopyEditBarcode.addEventListener('click', () => {
-        const barcodeInput = document.getElementById('edit-barcode');
-        const val = barcodeInput.value;
-        if (!val) return;
-        
-        if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(val).then(() => {
-                showToast('Code copié !', 'success');
-            }).catch(err => {
-                console.error('Clipboard error:', err);
-                fallbackCopy(val);
-            });
-        } else {
-            fallbackCopy(val);
-        }
-    });
-}
-
-function fallbackCopy(text) {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    document.body.appendChild(textArea);
-    textArea.select();
-    try {
-        document.execCommand('copy');
-        showToast('Code copié !', 'success');
-    } catch (err) {
-        showToast('Erreur copie', 'error');
-    }
-    document.body.removeChild(textArea);
-}
-
-// Save Edit Logic
-if (modalEditForm) {
-    modalEditForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const id = parseFloat(document.getElementById('edit-id').value);
-        const newEmplacement = document.getElementById('edit-emplacement').value.trim();
-        const newBarcode = document.getElementById('edit-barcode').value.trim();
-        
-        const item = inventory.find(i => i.id === id);
-        if (!item) return;
-        
-        item.emplacement = newEmplacement;
-        item.barcode = newBarcode;
-        
-        closeModalEdit();
-        renderList();
-        
-        if (item.status === 'Validé (Cloud)') {
-            try {
-                const payload = {
-                    action: 'UPDATE',
-                    data: {
-                        uuid: item.uuid,
-                        emplacement: newEmplacement,
-                        barcode: newBarcode
-                    }
-                };
-                
-                await fetch(GAS_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                showToast('Article modifié sur le Cloud.', 'cloud');
-            } catch (err) {
-                console.error(err);
-                showToast('Erreur lors de la modification Cloud.', 'error');
-            }
-        } else {
-            showToast('Article modifié localement.', 'success');
-        }
-    });
-}
-
-// Delete Item
-window.deleteItem = async (id) => {
-    const item = inventory.find(i => i.id === id);
-    if (!item) return;
-    
-    // Disable button to prevent double clicks
-    const btn = document.getElementById(`btn-delete-${id}`);
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>`;
-        lucide.createIcons();
-    }
-    
-    if (item.status === 'Validé (Cloud)') {
-        try {
-            const payload = {
-                action: 'DELETE',
-                data: { uuid: item.uuid }
-            };
-            
-            await fetch(GAS_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            
-            showToast('Article supprimé du Cloud.', 'cloud');
-        } catch (err) {
-            console.error(err);
-            showToast('Échec de la suppression Cloud.', 'error');
-        }
-    } else {
-        showToast('Article supprimé localement.', 'success');
-    }
-    
-    inventory = inventory.filter(i => i.id !== id);
-    renderList();
-};
-
-// Real Cloud Synchronization (Google Apps Script)
-async function envoyerAuCloud() {
-    // Filter to get only 'En attente' lines as requested
-    const itemsToSend = inventory.filter(item => item.status === 'En attente');
-    
-    if (itemsToSend.length === 0) {
-        showToast('Aucun article "En attente" à envoyer.', 'info');
-        return;
-    }
-
-    const originalContent = btnCloud.innerHTML;
-    btnCloud.disabled = true;
-    btnCloud.innerHTML = `
-        <i data-lucide="loader-2" class="w-6 h-6 animate-spin"></i>
-        Envoi en cours...
-    `;
-    lucide.createIcons();
-
-    try {
-        const payload = {
-            action: 'ADD',
-            data: itemsToSend.map(item => ({
-                emplacement: item.emplacement,
-                barcode: item.barcode,
-                uuid: item.uuid
-            }))
-        };
-
-        // Execute fetch with no-cors to bypass security policies in local context
-        await fetch(GAS_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        // Since no-cors gives an opaque response, we assume success if no network error occurred
-        itemsToSend.forEach(item => {
-            item.status = 'Validé (Cloud)';
-        });
-
-        renderList();
-        showToast(`${itemsToSend.length} articles envoyés au Cloud avec succès !`, 'cloud');
-    } catch (err) {
-        console.error('Cloud Sync Error:', err);
-        showToast('Échec de la connexion réseau au Cloud.', 'error');
-    } finally {
-        btnCloud.disabled = false;
-        btnCloud.innerHTML = originalContent;
-        lucide.createIcons();
-    }
-}
-
-btnCloud.addEventListener('click', envoyerAuCloud);
-
-// Synchroniser avec le Cloud (GET)
-async function actualiserCloud() {
-    const originalContent = btnRefresh.innerHTML;
-    btnRefresh.disabled = true;
-    btnRefresh.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 animate-spin"></i> ACTUALISATION...`;
-    lucide.createIcons();
-
-    try {
-        const response = await fetch(GAS_URL, {
-            method: 'GET',
-            redirect: 'follow'
-        });
-        
-        const data = await response.json();
-        
-        if (data && data.status === 'success' && Array.isArray(data.items)) {
-            // Conserver uniquement les articles locaux "En attente"
-            const pendingItems = inventory.filter(item => item.status === 'En attente');
-            
-            // Transformer les données du Cloud en format local
-            const cloudItems = data.items.map(cloudItem => ({
-                id: Date.now() + Math.random(),
-                emplacement: cloudItem.emplacement || 'INCONNU',
-                barcode: cloudItem.barcode || 'INCONNU',
-                uuid: cloudItem.uuid,
-                status: 'Validé (Cloud)',
-                timestamp: new Date().toISOString()
-            }));
-            
-            // Fusionner : Nouveaux items du Cloud + articles locaux en attente
-            inventory = [...cloudItems, ...pendingItems];
-            
-            // Tri décroissant
-            inventory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            
-            renderList();
-            showToast(`Mise à jour terminée : ${cloudItems.length} articles récupérés.`, 'cloud');
-        } else {
-            showToast('Erreur dans la réponse du serveur.', 'error');
-        }
-    } catch (err) {
-        console.error('Erreur GET:', err);
-        showToast('Impossible de récupérer les données du Cloud. Vérifiez les règles CORS.', 'error');
-    } finally {
-        btnRefresh.disabled = false;
-        btnRefresh.innerHTML = originalContent;
-        lucide.createIcons();
-    }
-}
-
-if (btnRefresh) {
-    btnRefresh.addEventListener('click', actualiserCloud);
-}
-
-// Toast Notification
-function showToast(message, type = 'info') {
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    let icon = 'info';
-    let color = 'text-blue-400';
-    if (type === 'success') { icon = 'check-circle'; color = 'text-green-400'; }
-    if (type === 'error') { icon = 'alert-circle'; color = 'text-red-400'; }
-    if (type === 'cloud') { icon = 'cloud-check'; color = 'text-indigo-400'; }
-    toast.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5 ${color}"></i><span class="text-sm font-medium">${message}</span>`;
-    toastContainer.appendChild(toast);
-    lucide.createIcons();
-    setTimeout(() => {
-        toast.style.transform = 'translateX(100%)';
-        toast.style.opacity = '0';
-        toast.style.transition = 'all 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
-
-// Event Listeners for Cache
-const btnClearCache = document.getElementById('btn-clear-cache');
-if (btnClearCache) btnClearCache.addEventListener('click', clearCache);
-
-// Silent Background Synchronization (READ-ONLY)
-// Only checks if the Cloud data has changed. Never sends data.
-// Sending is exclusively done by the user via "VALIDATE & SYNCHRONIZE CLOUD".
-async function backgroundSync() {
-    try {
-        const response = await fetch(GAS_URL, {
-            method: 'GET',
-            redirect: 'follow'
-        });
-        
-        const data = await response.json();
-        if (data && data.status === 'success' && Array.isArray(data.items)) {
-            const pendingItems = inventory.filter(item => item.status === 'En attente');
-            
-            const cloudItems = data.items.map(cloudItem => ({
-                id: Date.now() + Math.random(),
-                emplacement: cloudItem.emplacement || 'INCONNU',
-                barcode: cloudItem.barcode || 'INCONNU',
-                uuid: cloudItem.uuid,
-                status: 'Validé (Cloud)',
-                timestamp: new Date().toISOString()
-            }));
-            
-            const currentValid = inventory.filter(i => i.status !== 'En attente');
-            
-            // Only re-render if the Cloud has a different number of items (addition or deletion detected)
-            if (currentValid.length !== cloudItems.length) {
-                inventory = [...cloudItems, ...pendingItems];
-                inventory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                renderList();
-            }
-        }
-    } catch (err) {
-        // Silent fail — never interrupt the user
-    }
-}
-
-// Initialization sequence
 document.addEventListener('DOMContentLoaded', () => {
-    loadFromLocal();
-    
-    // Initial fetch
-    setTimeout(() => {
-        actualiserCloud();
-    }, 1000);
+    // 1. Initialize Modules
+    if (typeof initBg3D === 'function') initBg3D();
+    if (typeof initBarcodeWaiting === 'function') initBarcodeWaiting();
+    if (typeof initModals === 'function') initModals();
+    if (typeof initScanner === 'function') initScanner();
 
-    // Background sync every 8 seconds
-    setInterval(backgroundSync, 8000);
+    // 1.5 Check Configuration
+    const isConfigMissing = !window.KostConfig || !window.KostConfig.SUPABASE_URL || !window.KostConfig.SUPABASE_KEY || !window.KostConfig.GAS_URL;
+    if (isConfigMissing) {
+        if (typeof showToast === 'function') {
+            showToast("Configuration API manquante (config.js)", "error");
+        }
+        const btnCloud = document.getElementById('btn-cloud');
+        if (btnCloud) {
+            btnCloud.disabled = true;
+            btnCloud.title = "Configuration API manquante";
+            btnCloud.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+        const btnRefresh = document.getElementById('btn-refresh');
+        if (btnRefresh) {
+            btnRefresh.disabled = true;
+            btnRefresh.title = "Configuration API manquante";
+            btnRefresh.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+    }
 
-    // Draggable & Resizable Clock Logic (Desktop only)
+    // 2. Load Local Data
+    if (typeof loadFromLocal === 'function') loadFromLocal();
+
+    // 3. Event Listeners for DOM Elements
+    const btnCloud = document.getElementById('btn-cloud');
+    if (!isConfigMissing && btnCloud && typeof envoyerAuCloud === 'function') {
+        btnCloud.addEventListener('click', envoyerAuCloud);
+    }
+
+    const btnRefresh = document.getElementById('btn-refresh');
+    if (!isConfigMissing && btnRefresh && typeof actualiserCloud === 'function') {
+        btnRefresh.addEventListener('click', actualiserCloud);
+    }
+
+    const btnClearCache = document.getElementById('btn-clear-cache');
+    if (btnClearCache && typeof clearCache === 'function') {
+        btnClearCache.addEventListener('click', clearCache);
+    }
+
+    // 4. Clock and Synchronizations
+    if (typeof updateClock === 'function') {
+        updateClock();
+        setInterval(updateClock, 1000);
+    }
+
+    // Initial actualisation after 1s
+    if (!isConfigMissing && typeof actualiserCloud === 'function') {
+        setTimeout(actualiserCloud, 1000);
+    }
+
+    // Background sync every 8s
+    if (!isConfigMissing && typeof backgroundSync === 'function') {
+        setInterval(backgroundSync, 8000);
+    }
+
+    // 5. Draggable & Resizable Clock Logic (Desktop only)
     const clock = document.getElementById('clock-container');
     const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
     
     if (clock && !isTouchDevice) {
-        // Dragging
         let isDragging = false;
         let offsetLeft, offsetTop;
 
@@ -877,7 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (!isInResizeHandle) {
                 isDragging = true;
-                // Capture current position before removing transform
                 const rect = clock.getBoundingClientRect();
                 clock.style.transform = 'none';
                 clock.style.left = rect.left + 'px';
@@ -906,15 +104,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const timeTxt = document.getElementById('current-time');
         const secTxt = document.getElementById('current-seconds');
         
-        const resizeObserver = new ResizeObserver(entries => {
-            for (let entry of entries) {
-                const width = entry.contentRect.width;
-                const height = entry.contentRect.height;
-                const fontSize = Math.min(width / 4.5, height / 1.5);
-                timeTxt.style.fontSize = `${fontSize}px`;
-                secTxt.style.fontSize = `${fontSize / 3}px`;
-            }
-        });
-        resizeObserver.observe(clock);
+        if (timeTxt && secTxt) {
+            const resizeObserver = new ResizeObserver(entries => {
+                for (const entry of entries) {
+                    const width = entry.contentRect.width;
+                    const height = entry.contentRect.height;
+                    const fontSize = Math.min(width / 4.5, height / 1.5);
+                    timeTxt.style.fontSize = `${fontSize}px`;
+                    secTxt.style.fontSize = `${fontSize / 3}px`;
+                }
+            });
+            resizeObserver.observe(clock);
+        }
     }
 });

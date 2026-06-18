@@ -12,36 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script id="tailwind-config">
-        tailwind.config = {
-          darkMode: "class",
-          theme: {
-            extend: {
-              "colors": {
-                      "primary": "#ff6d00",
-                      "surface": "#141414",
-                      "background": "#0A0A0A",
-                      "outline": "#333333",
-                      "on-surface": "#ffffff",
-                      "on-surface-variant": "#a0a0a0",
-                      "primary-container": "#ff6d00",
-                      "secondary": "#888888",
-              },
-              "borderRadius": {
-                      "DEFAULT": "8px",
-                      "lg": "12px",
-                      "xl": "16px",
-              },
-              "fontFamily": {
-                      "body": ["Inter", "sans-serif"],
-                      "heading": ["Space Grotesk", "sans-serif"],
-                      "mono": ["JetBrains Mono", "monospace"],
-              },
-            },
-          },
-        }
-    </script>
+    <link rel="stylesheet" href="tailwind-flo.css">
 
     <style>
         body {
@@ -127,6 +98,7 @@
         }
     </style>
 
+    <script src="config.js" defer></script>
     <script src="lucide.js" defer></script>
     <script src="dexie.js" defer></script>
     <script src="database.js" defer></script>

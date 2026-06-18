@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K.O.S.T. - Hors Ligne</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0A0A0A;
+            color: #E2E8F0;
+            font-family: 'Space Grotesk', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .container {
+            max-width: 400px;
+            padding: 2.5rem;
+            background-color: #171717;
+            border: 1px solid #333333;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #F43F5E, #EC4899);
+        }
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            margin-bottom: 1.5rem;
+            color: #FFFFFF;
+        }
+        .logo span {
+            color: #F43F5E;
+        }
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0 0 1rem 0;
+            color: #FFFFFF;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        p {
+            font-size: 0.95rem;
+            color: #94A3B8;
+            line-height: 1.6;
+            margin: 0 0 2rem 0;
+        }
+        .btn-retry {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            background-color: #F43F5E;
+            color: #FFFFFF;
+            border: none;
+            padding: 1rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(244, 63, 94, 0.2);
+        }
+        .btn-retry:hover {
+            background-color: #E11D48;
+            transform: translateY(-1px);
+        }
+        .btn-retry:active {
+            transform: translateY(1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">K.O.S.<span>T.</span></div>
+        <h1>Connexion Perdue</h1>
+        <p>Vous êtes actuellement hors ligne ou le réseau est instable. Veuillez vérifier votre connexion et réessayer.</p>
+        <button class="btn-retry" onclick="window.location.reload()">Réessayer</button>
+    </div>
+</body>
+</html>
