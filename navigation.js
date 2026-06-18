@@ -3,6 +3,12 @@
  * Shared logic for the principal navigation drawer.
  */
 
+window.initLucide = window.initLucide || function() {
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     const navDrawer = document.getElementById('nav-drawer');
     const navBackdrop = document.getElementById('nav-backdrop');
