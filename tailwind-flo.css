@@ -2307,6 +2307,10 @@ input:where([type='file']):focus {
   background-color: rgb(255 109 0 / 0.1);
 }
 
+.group:hover .group-hover\:bg-purple-500\/20 {
+  background-color: rgb(168 85 247 / 0.2);
+}
+
 .group:hover .group-hover\:bg-yellow-400\/20 {
   background-color: rgb(250 204 21 / 0.2);
 }
@@ -2329,6 +2333,11 @@ input:where([type='file']):focus {
 .group:hover .group-hover\:text-orange-400 {
   --tw-text-opacity: 1;
   color: rgb(251 146 60 / var(--tw-text-opacity, 1));
+}
+
+.group:hover .group-hover\:text-purple-400 {
+  --tw-text-opacity: 1;
+  color: rgb(192 132 252 / var(--tw-text-opacity, 1));
 }
 
 .group:hover .group-hover\:text-white {

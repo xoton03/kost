@@ -6,6 +6,7 @@ module.exports = {
     "./station.html",
     "./tictache.html",
     "./ticticket.html",
+    "./history.html",
     "./js/**/*.js",
     "./app.js",
     "./navigation.js",
