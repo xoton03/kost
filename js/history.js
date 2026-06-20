@@ -136,43 +136,44 @@ document.addEventListener('DOMContentLoaded', () => {
         if (emptyState) emptyState.classList.add('hidden');
 
         filteredJobs.forEach(job => {
-            const tr = document.createElement('tr');
-            tr.className = 'border-b border-white/5 hover:bg-white/[0.02] transition-colors';
+            const tr = document.createElement('div');
+            tr.className = 'flex items-center px-4 py-3 border-b border-white/5 hover:bg-white/[0.02] transition-colors font-body-main text-body-main';
 
             // Status Badge Classes
-            let statusClass = 'bg-slate-800 text-slate-400 border border-slate-700';
+            let statusClass = 'border border-white/10 text-slate-500';
             let statusText = job.status.toUpperCase();
             if (job.status === 'pending') {
-                statusClass = 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+                statusClass = 'border border-amber-500/30 text-amber-400 bg-amber-500/10';
                 statusText = 'EN ATTENTE';
             } else if (job.status === 'printing') {
-                statusClass = 'bg-blue-500/10 text-blue-400 border border-blue-500/20';
+                statusClass = 'border border-accent text-accent bg-accent-alpha';
                 statusText = 'EN COURS';
             } else if (job.status === 'done') {
-                statusClass = 'bg-green-500/10 text-green-400 border border-green-500/20';
+                statusClass = 'border border-green-500/30 text-green-400 bg-green-500/10';
                 statusText = 'TERMINÉ';
             }
 
             tr.innerHTML = `
-                <td class="px-6 py-4 text-sm font-medium text-slate-400 font-mono">${formatDate(job.created_at)}</td>
-                <td class="px-6 py-4 text-sm font-bold text-white tracking-wider font-mono">${job.reference || 'N/A'}</td>
-                <td class="px-6 py-4 text-sm font-medium text-slate-400 font-mono">${job.old_price} DA</td>
-                <td class="px-6 py-4 text-sm font-bold text-[#22C55E] font-mono">${job.new_price} DA</td>
-                <td class="px-6 py-4 text-sm font-extrabold text-rose-500 font-mono">${job.discount || '-'}</td>
-                <td class="px-6 py-4 text-sm font-medium text-slate-300 font-mono">${job.quantity}</td>
-                <td class="px-6 py-4 text-xs font-semibold">
-                    <span class="px-2.5 py-1 rounded-full uppercase tracking-widest text-[9px] font-bold ${statusClass}">
+                <div class="w-[15%] font-mono text-xs text-slate-400">${formatDate(job.created_at)}</div>
+                <div class="w-[18%] font-mono text-sm font-bold text-orange-500 tracking-wider">${job.reference || 'N/A'}</div>
+                <div class="w-[11%] text-right font-mono text-xs text-slate-500 line-through">${job.old_price} DA</div>
+                <div class="w-[11%] text-right font-mono text-sm font-bold text-green-400">${job.new_price} DA</div>
+                <div class="w-[9%] text-right font-mono text-xs font-extrabold text-rose-500">${job.discount || '-'}</div>
+                <div class="w-[9%] text-right font-mono text-sm text-slate-300">${job.quantity}</div>
+                <div class="w-[14%] flex justify-center">
+                    <span class="px-2.5 py-0.5 rounded-none uppercase tracking-widest text-[9px] font-bold ${statusClass}">
                         ${statusText}
                     </span>
-                </td>
-                <td class="px-6 py-4 text-right space-x-2">
-                    <button class="btn-reprint p-1.5 rounded bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:text-white hover:bg-purple-500/20 transition-all cursor-pointer active:scale-95 inline-flex items-center justify-center" data-id="${job.id}" title="Ré-imprimer" aria-label="Ré-imprimer le ticket promo">
-                        <i data-lucide="printer" class="w-4 h-4"></i>
+                </div>
+                <div class="w-[13%] flex justify-end gap-2">
+                    <button class="btn-reprint border border-purple-500/30 text-purple-400 hover:bg-purple-500/20 hover:text-white font-mono text-[9px] px-2.5 py-1 transition-colors active:scale-95 flex items-center justify-center gap-1 cursor-pointer" data-id="${job.id}" title="Ré-imprimer" aria-label="Ré-imprimer le ticket promo">
+                        <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                        REPRINT
                     </button>
-                    <button class="btn-delete p-1.5 rounded bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:text-white hover:bg-rose-500/20 transition-all cursor-pointer active:scale-95 inline-flex items-center justify-center" data-id="${job.id}" title="Supprimer" aria-label="Supprimer l'ordre d'impression">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    <button class="btn-delete border border-white/10 text-slate-500 hover:border-red-500 hover:text-red-400 p-1.5 flex items-center justify-center transition-colors active:scale-95 cursor-pointer" data-id="${job.id}" title="Supprimer" aria-label="Supprimer l'ordre d'impression">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                     </button>
-                </td>
+                </div>
             `;
 
             tableBody.appendChild(tr);
@@ -256,10 +257,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Filter Buttons events
     filterButtons.forEach(btn => {
         btn.addEventListener('click', () => {
-            filterButtons.forEach(b => b.classList.remove('active', 'bg-white/10', 'text-white'));
-            filterButtons.forEach(b => b.classList.add('text-slate-400'));
-            btn.classList.add('active', 'bg-white/10', 'text-white');
-            btn.classList.remove('text-slate-400');
+            filterButtons.forEach(b => {
+                b.classList.remove('active', 'border-accent', 'bg-accent-alpha', 'text-accent');
+                b.classList.add('border-white/10', 'text-slate-400');
+            });
+            btn.classList.add('active', 'border-accent', 'bg-accent-alpha', 'text-accent');
+            btn.classList.remove('border-white/10', 'text-slate-400');
             applyFilters();
         });
     });

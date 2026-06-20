@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,7 +10,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="tailwind.css">
     <script src="config.js" defer></script>
@@ -20,8 +20,22 @@
     <script src="navigation.js" defer></script>
     <script src="js/history.js" defer></script>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .border-brutalist {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+        .border-accent {
+            border-color: #ff6d00;
+        }
+        .text-accent {
+            color: #ff6d00;
+        }
+        .bg-accent-alpha {
+            background-color: rgba(255, 109, 0, 0.1);
+        }
+    </style>
 </head>
-<body class="bg-black text-slate-300">
+<body class="bg-black text-slate-300 font-body-main selection:bg-orange-500/20 selection:text-white">
 
     <header class="flex items-center justify-between px-4 sm:px-6 bg-slate-900 border-b border-white/5">
         <div class="flex items-center gap-3">
@@ -62,10 +76,10 @@
     </header>
 
     <!-- Main Workspace -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 flex flex-col">
         
         <!-- Configuration Warning -->
-        <div id="config-warning" class="hidden mb-6 p-4 rounded-lg bg-red-950/20 border border-red-500/30 flex items-start gap-3">
+        <div id="config-warning" class="hidden mb-6 p-4 rounded bg-red-950/20 border border-red-500/30 flex items-start gap-3">
             <i data-lucide="alert-triangle" class="w-5 h-5 text-red-400 shrink-0 mt-0.5"></i>
             <div>
                 <h4 class="text-sm font-extrabold text-white uppercase tracking-wider">Configuration API manquante</h4>
@@ -73,63 +87,64 @@
             </div>
         </div>
 
-        <!-- Section Title and Stats -->
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+        <!-- Section Title -->
+        <div class="mb-6 flex justify-between items-end border-b border-white/5 pb-4">
             <div>
-                <h2 class="text-2xl font-black text-white uppercase tracking-tight font-display">Historique d'Étiquetage</h2>
-                <p class="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">Suivi et réimpression des étiquettes promos</p>
+                <div class="font-body-mono text-xs text-slate-500 mb-1 flex items-center gap-2 font-mono">
+                    <span class="w-1.5 h-1.5 bg-slate-500 block"></span>
+                    <span>/logs/print_queue_tickets/</span>
+                </div>
+                <h1 class="font-headline-md text-xl font-black text-white tracking-widest uppercase m-0">QUEUE_HISTORY_MANIFEST</h1>
             </div>
         </div>
 
         <!-- Search and Filters Bar -->
-        <div class="bg-slate-900 border border-white/5 rounded-xl p-4 mb-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
-            <!-- Search field -->
-            <div class="relative w-full md:w-80">
-                <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
-                <input type="text" id="history-search" placeholder="Rechercher une référence..." class="w-full pl-10 pr-4 py-2 bg-black border border-white/10 rounded-lg text-slate-300 placeholder-slate-600 focus:outline-none focus:border-[#22C55E] text-sm transition-colors font-mono">
+        <div class="bg-slate-900 border border-white/5 p-4 mb-6 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+            <!-- Search Bar Command style -->
+            <div class="flex items-center border border-white/10 h-10 pl-3 pr-2 group focus-within:border-accent transition-colors w-full md:w-80">
+                <span class="font-label-caps text-[10px] text-slate-500 mr-2 uppercase tracking-widest">SEARCH_CMD:</span>
+                <input class="bg-transparent border-none p-0 text-slate-300 font-mono text-sm focus:ring-0 focus:outline-none w-full placeholder-slate-700" placeholder="_" type="text" id="history-search"/>
+                <i data-lucide="search" class="w-4 h-4 text-slate-500 group-focus-within:text-accent ml-2"></i>
             </div>
 
             <!-- Filter Status -->
             <div class="flex flex-wrap gap-2 w-full md:w-auto">
-                <button class="filter-btn active bg-white/10 text-white border border-white/10 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all" data-status="all">Tout</button>
-                <button class="filter-btn text-slate-400 hover:bg-white/5 border border-transparent hover:border-white/5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all" data-status="pending">En attente</button>
-                <button class="filter-btn text-slate-400 hover:bg-white/5 border border-transparent hover:border-white/5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all" data-status="printing">En cours</button>
-                <button class="filter-btn text-slate-400 hover:bg-white/5 border border-transparent hover:border-white/5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all" data-status="done">Terminé</button>
+                <button class="filter-btn active border border-accent bg-accent-alpha text-accent font-label-caps text-[10px] tracking-wider px-4 py-2 transition-all font-bold" data-status="all">TOUT</button>
+                <button class="filter-btn border border-white/10 hover:border-accent text-slate-400 hover:text-accent font-label-caps text-[10px] tracking-wider px-4 py-2 transition-all font-bold" data-status="pending">EN ATTENTE</button>
+                <button class="filter-btn border border-white/10 hover:border-accent text-slate-400 hover:text-accent font-label-caps text-[10px] tracking-wider px-4 py-2 transition-all font-bold" data-status="printing">EN COURS</button>
+                <button class="filter-btn border border-white/10 hover:border-accent text-slate-400 hover:text-accent font-label-caps text-[10px] tracking-wider px-4 py-2 transition-all font-bold" data-status="done">TERMINÉ</button>
             </div>
         </div>
 
-        <!-- History Table Container -->
-        <div class="bg-slate-900 border border-white/5 rounded-xl overflow-hidden shadow-2xl relative">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-white/5 text-left">
-                    <thead class="bg-slate-950/40 text-slate-500 text-[10px] font-bold uppercase tracking-[0.15em]">
-                        <tr>
-                            <th scope="col" class="px-6 py-4">Date de demande</th>
-                            <th scope="col" class="px-6 py-4">Référence</th>
-                            <th scope="col" class="px-6 py-4">Ancien Prix</th>
-                            <th scope="col" class="px-6 py-4">Nouveau Prix</th>
-                            <th scope="col" class="px-6 py-4">Remise</th>
-                            <th scope="col" class="px-6 py-4">Quantité</th>
-                            <th scope="col" class="px-6 py-4">Statut</th>
-                            <th scope="col" class="px-6 py-4 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="history-table-body" class="divide-y divide-white/5">
-                        <!-- Populated by JS -->
-                    </tbody>
-                </table>
+        <!-- History Flex-Table Container -->
+        <div class="border border-white/5 bg-slate-900 flex-1 flex flex-col overflow-hidden shadow-2xl">
+            <!-- Table Header -->
+            <div class="flex items-center px-4 py-3 border-b border-white/5 bg-slate-950/40 font-label-caps text-[10px] text-slate-500 uppercase tracking-wider font-bold shrink-0">
+                <div class="w-[15%]">DATE_TIME</div>
+                <div class="w-[18%]">REFERENCE_ID</div>
+                <div class="w-[11%] text-right">ANC_PRIX</div>
+                <div class="w-[11%] text-right">NOUV_PRIX</div>
+                <div class="w-[9%] text-right">REMISE</div>
+                <div class="w-[9%] text-right">QTE</div>
+                <div class="w-[14%] text-center">STATUT</div>
+                <div class="w-[13%] text-right">ACTIONS_CMD</div>
+            </div>
+            
+            <!-- Table Body (Scrollable container) -->
+            <div id="history-table-body" class="flex-1 overflow-y-auto divide-y divide-white/5">
+                <!-- Populated dynamically by js/history.js -->
             </div>
 
             <!-- Loading Spinner -->
             <div id="history-loading" class="flex flex-col items-center justify-center py-20 gap-4">
-                <div class="w-10 h-10 border-4 border-slate-800 border-t-[#22C55E] rounded-full animate-spin"></div>
-                <span class="text-xs font-bold uppercase tracking-widest text-slate-500">Chargement de l'historique...</span>
+                <div class="w-10 h-10 border-4 border-slate-800 border-t-orange-500 rounded-full animate-spin"></div>
+                <span class="text-xs font-bold uppercase tracking-widest text-slate-500 font-mono">LOADING_HISTORY...</span>
             </div>
 
             <!-- Empty State -->
             <div id="history-empty" class="hidden flex-col items-center justify-center py-20 gap-3">
                 <i data-lucide="folder-open" class="w-10 h-10 text-slate-700"></i>
-                <span class="text-xs font-bold uppercase tracking-widest text-slate-500">Aucun historique trouvé</span>
+                <span class="text-xs font-bold uppercase tracking-widest text-slate-500 font-mono">EMPTY_MANIFEST</span>
             </div>
         </div>
     </main>
