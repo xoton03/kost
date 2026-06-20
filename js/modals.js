@@ -260,8 +260,8 @@ window.initModals = function() {
                             barcode: newBarcode
                         }
                     };
-                    
-                    await fetch(GAS_URL, {
+                    const gasUrl = window.KostConfig?.GAS_URL || window.GAS_URL || "";
+                    await fetch(gasUrl, {
                         method: 'POST',
                         mode: 'no-cors',
                         headers: { 'Content-Type': 'application/json' },

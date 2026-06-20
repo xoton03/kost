@@ -3,9 +3,14 @@
  * Centralized IndexedDB for all modules (Checkage, Tic-Tache, Flo).
  */
 
-window.KostConfig = window.KostConfig || { SUPABASE_URL: "", SUPABASE_KEY: "", GAS_URL: "" };
-window.SUPABASE_URL = window.KostConfig.SUPABASE_URL || "";
-window.SUPABASE_KEY = window.KostConfig.SUPABASE_KEY || "";
+window.KostConfig = window.KostConfig || {};
+window.KostConfig.SUPABASE_URL = window.KostConfig.SUPABASE_URL || window.SUPABASE_URL || "";
+window.KostConfig.SUPABASE_KEY = window.KostConfig.SUPABASE_KEY || window.SUPABASE_KEY || "";
+window.KostConfig.GAS_URL = window.KostConfig.GAS_URL || window.GAS_URL || "";
+
+window.SUPABASE_URL = window.KostConfig.SUPABASE_URL;
+window.SUPABASE_KEY = window.KostConfig.SUPABASE_KEY;
+window.GAS_URL = window.KostConfig.GAS_URL;
 
 // Initialize Dexie
 // eslint-disable-next-line no-redeclare
