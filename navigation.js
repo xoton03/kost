@@ -173,10 +173,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // PWA Install Banner Logic
     const initInstallBanner = () => {
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-        const isAccepted = localStorage.getItem('kost_install_prompt_dismissed') === 'accepted';
+        const isHiddenThisSession = sessionStorage.getItem('kost_install_prompt_hidden_this_session') === 'true';
         
-        // Show banner only if NOT standalone and NOT accepted
-        if (isStandalone || isAccepted) {
+        // Show banner only if NOT standalone and NOT hidden in this session
+        if (isStandalone || isHiddenThisSession) {
             return;
         }
 
@@ -207,6 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnDismiss.addEventListener('click', (e) => {
                 e.preventDefault();
                 banner.classList.add('hidden');
+                sessionStorage.setItem('kost_install_prompt_hidden_this_session', 'true');
                 localStorage.setItem('kost_install_prompt_dismissed', 'dismissed');
             });
         }
@@ -223,6 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         banner.classList.add('hidden');
                     } else {
                         localStorage.setItem('kost_install_prompt_dismissed', 'dismissed');
+                        sessionStorage.setItem('kost_install_prompt_hidden_this_session', 'true');
                         banner.classList.add('hidden');
                     }
                     deferredInstallPrompt = null;
