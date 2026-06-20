@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kost-v22';
+const CACHE_NAME = 'kost-v23';
 const urlsToCache = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const urlsToCache = [
   './station.html',
   './flo.html',
   './explorer.html',
+  './history.html',
   './technical_fiche.html',
   './styles.css',
   './database.js',
@@ -25,6 +26,7 @@ const urlsToCache = [
   './js/scanner.js',
   './js/modals.js',
   './js/bg3d.js',
+  './js/history.js',
   './assets/favicon.png',
   './assets/logo.png'
 ];
