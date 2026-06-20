@@ -3,6 +3,16 @@
  * Shared logic for the principal navigation drawer.
  */
 
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    const banner = document.getElementById('kost-install-banner');
+    if (banner) {
+        banner.classList.remove('hidden');
+    }
+});
+
 window.initLucide = window.initLucide || function() {
     if (window.lucide) {
         window.lucide.createIcons();
@@ -159,4 +169,79 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.initLucide) {
         window.initLucide();
     }
+
+    // PWA Install Banner Logic
+    const initInstallBanner = () => {
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+        const isAccepted = localStorage.getItem('kost_install_prompt_dismissed') === 'accepted';
+        
+        // Show banner only if NOT standalone and NOT accepted
+        if (isStandalone || isAccepted) {
+            return;
+        }
+
+        // Create banner element
+        const banner = document.createElement('div');
+        banner.id = 'kost-install-banner';
+        banner.className = 'install-banner hidden';
+        banner.innerHTML = `
+            <div class="install-banner-content">
+                <img src="assets/logo.png" alt="Logo K.O.S.T." class="install-banner-logo">
+                <div class="install-banner-text">
+                    <span class="install-banner-title">Installer l'application</span>
+                    <span class="install-banner-desc">Accédez à K.O.S.T. directement depuis l'écran d'accueil</span>
+                </div>
+                <div class="install-banner-actions">
+                    <button id="btn-install-dismiss" class="install-btn-secondary">Plus tard</button>
+                    <button id="btn-install-prompt" class="install-btn-primary">Installer</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(banner);
+
+        // Bind events
+        const btnDismiss = document.getElementById('btn-install-dismiss');
+        const btnInstall = document.getElementById('btn-install-prompt');
+
+        if (btnDismiss) {
+            btnDismiss.addEventListener('click', (e) => {
+                e.preventDefault();
+                banner.classList.add('hidden');
+                localStorage.setItem('kost_install_prompt_dismissed', 'dismissed');
+            });
+        }
+
+        if (btnInstall) {
+            btnInstall.addEventListener('click', async (e) => {
+                e.preventDefault();
+                if (deferredInstallPrompt) {
+                    deferredInstallPrompt.prompt();
+                    const { outcome } = await deferredInstallPrompt.userChoice;
+                    console.log(`[PWA Install] User choice: ${outcome}`);
+                    if (outcome === 'accepted') {
+                        localStorage.setItem('kost_install_prompt_dismissed', 'accepted');
+                        banner.classList.add('hidden');
+                    } else {
+                        localStorage.setItem('kost_install_prompt_dismissed', 'dismissed');
+                        banner.classList.add('hidden');
+                    }
+                    deferredInstallPrompt = null;
+                } else {
+                    if (typeof showToast === 'function') {
+                        showToast("INSTALLATEUR NON DISPONIBLE SUR CE NAVIGATEUR", "error");
+                    } else {
+                        alert("L'installation n'est pas supportée par votre navigateur (ou déjà installée).");
+                    }
+                    banner.classList.add('hidden');
+                }
+            });
+        }
+
+        // Show banner if event already fired
+        if (deferredInstallPrompt) {
+            banner.classList.remove('hidden');
+        }
+    };
+
+    initInstallBanner();
 });

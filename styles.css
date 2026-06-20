@@ -757,3 +757,128 @@ tr:hover {
     color: var(--industrial-orange);
     letter-spacing: -0.02em;
 }
+
+/* --- PWA Install Banner --- */
+.install-banner {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
+    width: 90%;
+    max-width: 500px;
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--industrial-border);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 15px rgba(255, 109, 0, 0.1);
+    padding: 12px 16px;
+    font-family: var(--font-body);
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    animation: bannerSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.install-banner.hidden {
+    display: none !important;
+}
+
+.install-banner-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.install-banner-logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    object-fit: cover;
+    border: 1px solid rgba(255, 109, 0, 0.3);
+    flex-shrink: 0;
+}
+
+.install-banner-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.install-banner-title {
+    font-family: var(--font-headline);
+    font-weight: 800;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    color: #ffffff;
+    letter-spacing: 0.05em;
+}
+
+.install-banner-desc {
+    font-size: 0.72rem;
+    color: var(--industrial-text-muted);
+}
+
+.install-banner-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.install-btn-primary {
+    background: var(--industrial-orange);
+    color: #000000;
+    border: none;
+    padding: 8px 16px;
+    font-family: var(--font-headline);
+    font-weight: 800;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 10px rgba(255, 109, 0, 0.2);
+}
+
+.install-btn-primary:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+}
+
+.install-btn-secondary {
+    background: transparent;
+    color: var(--industrial-text-muted);
+    border: 1px solid var(--industrial-border);
+    padding: 8px 16px;
+    font-family: var(--font-headline);
+    font-weight: 800;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.install-btn-secondary:hover {
+    color: #ffffff;
+    border-color: #555555;
+}
+
+@media (max-width: 600px) {
+    .install-banner {
+        bottom: 10px;
+        width: 94%;
+        padding: 10px;
+    }
+    .install-banner-content {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+        gap: 10px;
+    }
+    .install-banner-logo {
+        margin: 0 auto;
+    }
+    .install-banner-actions {
+        margin-left: 0;
+        justify-content: center;
+    }
+}
