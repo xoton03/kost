@@ -24,6 +24,7 @@ window.resetModalState = function() {
 };
 
 window.openModal = function() {
+    window.lastFocusedElement = document.activeElement;
     resetModalState();
     const searchModal = document.getElementById('search-modal');
     const modalContent = document.getElementById('modal-content');
@@ -55,8 +56,12 @@ window.closeModal = function() {
             searchModal.classList.add('hidden');
             searchModal.classList.remove('flex');
         }
-        const btnOpenSearch = document.getElementById('btn-open-search');
-        if (btnOpenSearch) btnOpenSearch.focus();
+        if (window.lastFocusedElement && typeof window.lastFocusedElement.focus === 'function') {
+            window.lastFocusedElement.focus();
+        } else {
+            const btnOpenSearch = document.getElementById('btn-open-search');
+            if (btnOpenSearch) btnOpenSearch.focus();
+        }
     }, 300);
 };
 
@@ -244,6 +249,9 @@ window.initModals = function() {
             const item = inventory.find(i => i.id === id);
             if (!item) return;
             
+            const oldEmplacement = item.emplacement;
+            const oldBarcode = item.barcode;
+            
             item.emplacement = newEmplacement;
             item.barcode = newBarcode;
             
@@ -268,9 +276,19 @@ window.initModals = function() {
                         body: JSON.stringify(payload)
                     });
                     
+                    // GET status confirmation
+                    const confirmRes = await fetch(`${gasUrl}?action=status`);
+                    if (!confirmRes.ok) throw new Error("Statut de confirmation invalide");
+                    const confirmData = await confirmRes.json();
+                    if (confirmData.status !== 'success') throw new Error("Action non confirmée par le serveur");
+                    
                     if (typeof showToast === 'function') showToast('Article modifié sur le Cloud.', 'cloud');
                 } catch (err) {
                     console.error(err);
+                    // Revert values
+                    item.emplacement = oldEmplacement;
+                    item.barcode = oldBarcode;
+                    if (typeof renderList === 'function') renderList();
                     if (typeof showToast === 'function') showToast('Erreur lors de la modification Cloud.', 'error');
                 }
             } else {

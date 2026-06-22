@@ -41,7 +41,7 @@ window.updateClock = function() {
 };
 
 // Toast Notification
-window.showToast = function(message, type = 'info') {
+window.showToast = function(message, type = 'info', persistent = false) {
     const toast = document.createElement('div');
     toast.className = 'toast';
     toast.setAttribute('role', 'alert');
@@ -50,19 +50,22 @@ window.showToast = function(message, type = 'info') {
     if (type === 'success') { icon = 'check-circle'; color = 'text-green-400'; }
     if (type === 'error') { icon = 'alert-circle'; color = 'text-red-400'; }
     if (type === 'cloud') { icon = 'cloud-check'; color = 'text-indigo-400'; }
-    toast.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5 ${color}"></i><span class="text-sm font-medium">${message}</span>`;
+    toast.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5 ${color} shrink-0"></i><span class="text-sm font-medium flex-1">${message}</span>`;
     
     const container = document.getElementById('toast-container');
     if (container) {
         container.appendChild(toast);
         window.initLucide();
     }
-    setTimeout(() => {
-        toast.style.transform = 'translateX(100%)';
-        toast.style.opacity = '0';
-        toast.style.transition = 'all 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    if (!persistent) {
+        setTimeout(() => {
+            toast.style.transform = 'translateX(100%)';
+            toast.style.opacity = '0';
+            toast.style.transition = 'all 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+    return toast;
 };
 
 // Render List
@@ -146,6 +149,7 @@ window.renderList = function() {
 
 // Edit Item UI Logic
 window.editItem = (id) => {
+    window.lastFocusedElement = document.getElementById(`btn-edit-${id}`) || document.activeElement;
     const item = window.inventory.find(i => i.id === id);
     if (!item) return;
     
@@ -182,17 +186,14 @@ window.closeModalEdit = function() {
         editModalContent.classList.remove('scale-100', 'opacity-100');
         editModalContent.classList.add('scale-95', 'opacity-0');
     }
-    const editIdEl = document.getElementById('edit-id');
-    const lastId = editIdEl ? editIdEl.value : null;
 
     setTimeout(() => {
         if (editModal) {
             editModal.classList.add('hidden');
             editModal.classList.remove('flex');
         }
-        if (lastId) {
-            const btnEdit = document.getElementById(`btn-edit-${lastId}`);
-            if (btnEdit) btnEdit.focus();
+        if (window.lastFocusedElement && typeof window.lastFocusedElement.focus === 'function') {
+            window.lastFocusedElement.focus();
         }
     }, 300);
 };
@@ -206,7 +207,7 @@ window.fallbackCopy = function(text) {
     try {
         document.execCommand('copy');
         if (typeof window.showToast === 'function') window.showToast('Code copié !', 'success');
-    } catch (err) {
+    } catch {
         if (typeof window.showToast === 'function') window.showToast('Erreur copie', 'error');
     }
     document.body.removeChild(textArea);
@@ -240,10 +241,18 @@ window.deleteItem = async (id) => {
                 body: JSON.stringify(payload)
             });
             
+            // GET status confirmation
+            const confirmRes = await fetch(`${gasUrl}?action=status`);
+            if (!confirmRes.ok) throw new Error("Statut de confirmation invalide");
+            const confirmData = await confirmRes.json();
+            if (confirmData.status !== 'success') throw new Error("Action non confirmée par le serveur");
+            
             if (typeof window.showToast === 'function') window.showToast('Article supprimé du Cloud.', 'cloud');
         } catch (err) {
             console.error(err);
             if (typeof window.showToast === 'function') window.showToast('Échec de la suppression Cloud.', 'error');
+            window.renderList();
+            return;
         }
     } else {
         if (typeof window.showToast === 'function') window.showToast('Article supprimé localement.', 'success');
@@ -294,6 +303,12 @@ window.envoyerAuCloud = async function() {
             body: JSON.stringify(payload)
         });
 
+        // GET status confirmation
+        const confirmRes = await fetch(`${gasUrl}?action=status`);
+        if (!confirmRes.ok) throw new Error("Statut de confirmation invalide");
+        const confirmData = await confirmRes.json();
+        if (confirmData.status !== 'success') throw new Error("Action non confirmée par le serveur");
+
         // Since no-cors gives an opaque response, we assume success if no network error occurred
         itemsToSend.forEach(item => {
             item.status = 'Validé (Cloud)';
@@ -311,6 +326,54 @@ window.envoyerAuCloud = async function() {
             window.initLucide();
         }
     }
+};
+
+// Merge Cloud and Local Inventory (preserving local IDs & timestamps)
+window.mergeInventory = function(serverItems) {
+    const pendingItems = window.inventory.filter(item => item.status === 'En attente');
+    const localValidated = window.inventory.filter(item => item.status === 'Validé (Cloud)');
+    
+    // Map local validated by UUID for fast lookup
+    const localMap = new Map();
+    localValidated.forEach(item => {
+        if (item.uuid) localMap.set(item.uuid, item);
+    });
+    
+    // Merge server items, preserving local id & timestamp if it already exists
+    const mergedCloudItems = serverItems.map(serverItem => {
+        const existing = localMap.get(serverItem.uuid);
+        return {
+            id: existing ? existing.id : (Date.now() + Math.random()),
+            emplacement: serverItem.emplacement || 'INCONNU',
+            barcode: serverItem.barcode || 'INCONNU',
+            uuid: serverItem.uuid,
+            status: 'Validé (Cloud)',
+            timestamp: existing ? existing.timestamp : new Date().toISOString()
+        };
+    });
+    
+    // Check if there is any difference to avoid unneeded re-rendering and save local storage
+    let hasChanges = false;
+    if (localValidated.length !== mergedCloudItems.length) {
+        hasChanges = true;
+    } else {
+        for (let i = 0; i < mergedCloudItems.length; i++) {
+            const server = mergedCloudItems[i];
+            const local = localMap.get(server.uuid);
+            if (!local || local.emplacement !== server.emplacement || local.barcode !== server.barcode) {
+                hasChanges = true;
+                break;
+            }
+        }
+    }
+    
+    if (hasChanges) {
+        window.inventory = [...mergedCloudItems, ...pendingItems];
+        window.inventory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        window.renderList();
+        return true;
+    }
+    return false;
 };
 
 // Synchroniser avec le Cloud (GET)
@@ -338,27 +401,14 @@ window.actualiserCloud = async function() {
         const data = await response.json();
         
         if (data && data.status === 'success' && Array.isArray(data.items)) {
-            // Conserver uniquement les articles locaux "En attente"
-            const pendingItems = window.inventory.filter(item => item.status === 'En attente');
-            
-            // Transformer les données du Cloud en format local
-            const cloudItems = data.items.map(cloudItem => ({
-                id: Date.now() + Math.random(),
-                emplacement: cloudItem.emplacement || 'INCONNU',
-                barcode: cloudItem.barcode || 'INCONNU',
-                uuid: cloudItem.uuid,
-                status: 'Validé (Cloud)',
-                timestamp: new Date().toISOString()
-            }));
-            
-            // Fusionner : Nouveaux items du Cloud + articles locaux en attente
-            window.inventory = [...cloudItems, ...pendingItems];
-            
-            // Tri décroissant
-            window.inventory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            
-            window.renderList();
-            if (typeof window.showToast === 'function') window.showToast(`Mise à jour terminée : ${cloudItems.length} articles récupérés.`, 'cloud');
+            const changed = window.mergeInventory(data.items);
+            if (typeof window.showToast === 'function') {
+                if (changed) {
+                    window.showToast(`Mise à jour terminée : ${data.items.length} articles synchronisés.`, 'cloud');
+                } else {
+                    window.showToast(`À jour : aucun changement détecté.`, 'info');
+                }
+            }
         } else {
             if (typeof window.showToast === 'function') window.showToast('Erreur dans la réponse du serveur.', 'error');
         }
@@ -392,25 +442,7 @@ window.backgroundSync = async function() {
         
         const data = await response.json();
         if (data && data.status === 'success' && Array.isArray(data.items)) {
-            const pendingItems = window.inventory.filter(item => item.status === 'En attente');
-            
-            const cloudItems = data.items.map(cloudItem => ({
-                id: Date.now() + Math.random(),
-                emplacement: cloudItem.emplacement || 'INCONNU',
-                barcode: cloudItem.barcode || 'INCONNU',
-                uuid: cloudItem.uuid,
-                status: 'Validé (Cloud)',
-                timestamp: new Date().toISOString()
-            }));
-            
-            const currentValid = window.inventory.filter(i => i.status !== 'En attente');
-            
-            // Only re-render if the Cloud has a different number of items (addition or deletion detected)
-            if (currentValid.length !== cloudItems.length) {
-                window.inventory = [...cloudItems, ...pendingItems];
-                window.inventory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                window.renderList();
-            }
+            window.mergeInventory(data.items);
         }
     } catch (err) {
         console.error(`[BackgroundSync] Erreur : ${err.message || 'CORS / Hors ligne'} | URL : ${gasUrl}`);
