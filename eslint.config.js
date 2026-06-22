@@ -1,0 +1,78 @@
+module.exports = [
+    {
+        languageOptions: {
+            ecmaVersion: 12,
+            sourceType: "script",
+            globals: {
+                // Browser Environment Globals
+                window: "readonly",
+                document: "readonly",
+                console: "readonly",
+                fetch: "readonly",
+                setTimeout: "readonly",
+                setInterval: "readonly",
+                localStorage: "readonly",
+                navigator: "readonly",
+                confirm: "readonly",
+                alert: "readonly",
+                HTMLElement: "readonly",
+                CloseEvent: "readonly",
+                indexedDB: "readonly",
+                Event: "readonly",
+                AbortController: "readonly",
+                FileReader: "readonly",
+                Image: "readonly",
+                DOMParser: "readonly",
+                TextEncoder: "readonly",
+                TextDecoder: "readonly",
+                Uint8Array: "readonly",
+                Promise: "readonly",
+                Map: "readonly",
+                Set: "readonly",
+
+                // Project Globals
+                Dexie: "readonly",
+                lucide: "readonly",
+                JsBarcode: "readonly",
+                inventory: "writable",
+                GAS_URL: "readonly",
+                SUPABASE_URL: "readonly",
+                SUPABASE_KEY: "readonly",
+                initBg3D: "readonly",
+                initBarcodeWaiting: "readonly",
+                initModals: "readonly",
+                initScanner: "readonly",
+                loadFromLocal: "readonly",
+                saveToLocal: "readonly",
+                clearCache: "readonly",
+                renderList: "readonly",
+                updateClock: "readonly",
+                showToast: "readonly",
+                envoyerAuCloud: "readonly",
+                actualiserCloud: "readonly",
+                backgroundSync: "readonly",
+                closeModalEdit: "readonly",
+                fallbackCopy: "readonly",
+                openModal: "readonly",
+                closeModal: "readonly",
+                resetModalState: "readonly",
+                performSearch: "readonly",
+                editItem: "readonly",
+                deleteItem: "readonly",
+                getColors: "readonly",
+                getSizes: "readonly",
+                getArticle: "readonly",
+                syncCatalogue: "readonly",
+                db: "readonly",
+                Html5Qrcode: "readonly",
+                Html5QrcodeSupportedFormats: "readonly",
+                searchArticles: "readonly"
+            }
+        },
+        rules: {
+            "no-unused-vars": "warn",
+            "no-alert": "warn",
+            "prefer-const": "warn"
+        }
+    }
+];
