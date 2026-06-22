@@ -21,7 +21,6 @@ window.GAS_URL = window.KostConfig.GAS_URL;
 window.GAS_PRINT_URL = window.KostConfig.GAS_PRINT_URL;
 
 // Initialize Dexie
-// eslint-disable-next-line no-redeclare
 const db = new Dexie("KostSharedDB");
 
 // Schema Definition (V9)
@@ -29,11 +28,61 @@ db.version(5).stores({
     catalogue_articles: "gencod, ref_article, libelle, prix_tarif, prix_reduit, brand, type_article, taille, couleur, marche, genre, groupe"
 });
 
+// Function to backup catalogue_articles to localStorage before DB deletion
+function backupAndCleanDatabase() {
+    return new Promise((resolve) => {
+        console.log("[DB Backup] Attempting to backup catalogue to localStorage...");
+        const req = indexedDB.open("KostSharedDB");
+        req.onsuccess = function (event) {
+            const tempDb = event.target.result;
+            try {
+                if (!tempDb.objectStoreNames.contains("catalogue_articles")) {
+                    console.log("[DB Backup] No catalogue_articles store found to backup.");
+                    tempDb.close();
+                    resolve();
+                    return;
+                }
+                const transaction = tempDb.transaction("catalogue_articles", "readonly");
+                const store = transaction.objectStore("catalogue_articles");
+                const getAllReq = store.getAll();
+                getAllReq.onsuccess = function () {
+                    const data = getAllReq.result;
+                    if (data && data.length > 0) {
+                        try {
+                            localStorage.setItem("kost_catalogue_backup", JSON.stringify(data));
+                            localStorage.setItem("kost_db_reset_flag", "true");
+                            console.log(`[DB Backup] Successfully backed up ${data.length} items to localStorage.`);
+                        } catch (storageErr) {
+                            console.error("[DB Backup] localStorage quota exceeded, failed to save backup:", storageErr);
+                        }
+                    }
+                    tempDb.close();
+                    resolve();
+                };
+                getAllReq.onerror = function () {
+                    console.error("[DB Backup] Request to get all items failed.");
+                    tempDb.close();
+                    resolve();
+                };
+            } catch (err) {
+                console.error("[DB Backup] Error reading store for backup:", err);
+                tempDb.close();
+                resolve();
+            }
+        };
+        req.onerror = function () {
+            console.error("[DB Backup] Failed to open database natively.");
+            resolve();
+        };
+    });
+}
+
 // Safeguard for primary key changes: 
 // Dexie doesn't support changing the primary key on an existing table.
 // If it happens (UpgradeError), we delete the DB and reload to start fresh.
-db.open().catch("UpgradeError", function () {
-    console.warn("[DB] Schema mismatch (Primary Key change). Deleting database to fix...");
+db.open().catch("UpgradeError", async function () {
+    console.warn("[DB] Schema mismatch (Primary Key change). Backing up data and deleting database to fix...");
+    await backupAndCleanDatabase();
     db.delete().then(() => {
         console.log("[DB] Database deleted. Reloading page...");
         window.location.reload();
@@ -250,28 +299,37 @@ window.searchArticles = async function(query, limit = 50, brandFilter = "") {
         if (localCount > 0) {
             let tempResults = [];
             if (cleanQuery) {
-                const queryLower = cleanQuery.toLowerCase();
                 const isNumeric = /^\d+$/.test(cleanQuery);
                 
-                tempResults = await db.catalogue_articles
-                    .filter(item => {
-                        const matchGencod = item.gencod && item.gencod.includes(cleanQuery);
-                        const matchRef = item.ref_article && item.ref_article.toLowerCase().includes(queryLower);
-                        const matchLibelle = item.libelle && item.libelle.toLowerCase().includes(queryLower);
-                        const matchBrand = item.brand && item.brand.toLowerCase().includes(queryLower);
-                        return matchGencod || matchRef || matchLibelle || matchBrand;
-                    })
-                    .toArray();
+                // Execute index startsWithIgnoreCase queries in parallel for ultra-high performance
+                const [byRef, byGencod, byBrand, byLibelle] = await Promise.all([
+                    db.catalogue_articles.where('ref_article').startsWithIgnoreCase(cleanQuery).toArray(),
+                    db.catalogue_articles.where('gencod').startsWithIgnoreCase(cleanQuery).toArray(),
+                    db.catalogue_articles.where('brand').startsWithIgnoreCase(cleanQuery).toArray(),
+                    db.catalogue_articles.where('libelle').startsWithIgnoreCase(cleanQuery).toArray()
+                ]);
+                
+                // Merge and deduplicate
+                const seen = new Set();
+                tempResults = [];
+                [...byRef, ...byGencod, ...byBrand, ...byLibelle].forEach(item => {
+                    if (item && item.gencod && !seen.has(item.gencod)) {
+                        seen.add(item.gencod);
+                        tempResults.push(item);
+                    }
+                });
                 
                 // Handle potential leading zero truncation from bigint database types
                 if (isNumeric && cleanQuery.startsWith('0')) {
                     const strippedQuery = cleanQuery.replace(/^0+/, '');
                     if (strippedQuery.length > 0) {
                         const extraMatches = await db.catalogue_articles
-                            .filter(item => item.gencod && item.gencod.includes(strippedQuery))
+                            .where('gencod')
+                            .startsWithIgnoreCase(strippedQuery)
                             .toArray();
                         for (const m of extraMatches) {
-                            if (!tempResults.some(r => r.gencod === m.gencod)) {
+                            if (m && m.gencod && !seen.has(m.gencod)) {
+                                seen.add(m.gencod);
                                 tempResults.push(m);
                             }
                         }

@@ -27,6 +27,68 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // 1.6 Check Database Reset Flag
+    const dbResetFlag = localStorage.getItem("kost_db_reset_flag");
+    if (dbResetFlag && typeof showToast === 'function') {
+        const toast = showToast("Base de données réinitialisée (Mise à jour).", "error", true);
+        if (toast) {
+            const hasBackup = localStorage.getItem("kost_catalogue_backup");
+            if (hasBackup) {
+                const btnContainer = document.createElement("div");
+                btnContainer.className = "flex gap-2 mt-2";
+                
+                const btnRestore = document.createElement("button");
+                btnRestore.className = "px-2.5 py-1 text-[10px] font-bold bg-[#EAB308] text-black uppercase tracking-wider cursor-pointer border-none hover:bg-yellow-500 active:scale-95 transition-all";
+                btnRestore.textContent = "Restaurer";
+                btnRestore.addEventListener("click", async () => {
+                    btnRestore.disabled = true;
+                    btnRestore.textContent = "Restauration...";
+                    try {
+                        const data = JSON.parse(localStorage.getItem("kost_catalogue_backup"));
+                        await db.catalogue_articles.clear();
+                        await db.catalogue_articles.bulkAdd(data);
+                        localStorage.removeItem("kost_db_reset_flag");
+                        localStorage.removeItem("kost_catalogue_backup");
+                        showToast("Restauration réussie !", "success");
+                        toast.remove();
+                        const localDbStatus = document.getElementById('local-db-status');
+                        if (localDbStatus) {
+                            const count = await db.catalogue_articles.count();
+                            localDbStatus.textContent = `${count} articles (restaurés)`;
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        showToast("Échec de la restauration", "error");
+                        btnRestore.disabled = false;
+                        btnRestore.textContent = "Restaurer";
+                    }
+                });
+                
+                const btnIgnore = document.createElement("button");
+                btnIgnore.className = "px-2.5 py-1 text-[10px] font-bold bg-slate-800 text-white uppercase tracking-wider cursor-pointer border border-white/10 hover:bg-slate-700 active:scale-95 transition-all";
+                btnIgnore.textContent = "Ignorer";
+                btnIgnore.addEventListener("click", () => {
+                    localStorage.removeItem("kost_db_reset_flag");
+                    localStorage.removeItem("kost_catalogue_backup");
+                    toast.remove();
+                });
+                
+                btnContainer.appendChild(btnRestore);
+                btnContainer.appendChild(btnIgnore);
+                toast.appendChild(btnContainer);
+            } else {
+                const btnIgnore = document.createElement("button");
+                btnIgnore.className = "ml-3 px-2 py-1 text-[10px] font-bold bg-slate-800 text-white uppercase tracking-wider cursor-pointer border border-white/10 hover:bg-slate-700 active:scale-95 transition-all";
+                btnIgnore.textContent = "Ignorer";
+                btnIgnore.addEventListener("click", () => {
+                    localStorage.removeItem("kost_db_reset_flag");
+                    toast.remove();
+                });
+                toast.appendChild(btnIgnore);
+            }
+        }
+    }
+
     // 2. Load Local Data
     if (typeof loadFromLocal === 'function') loadFromLocal();
 
