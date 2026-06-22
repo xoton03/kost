@@ -478,8 +478,11 @@
     <!-- Script Logic -->
     <script>
         // Supabase configuration
-        window.SUPABASE_URL = window.SUPABASE_URL || "https://jphzmgscxpejcyjlnspq.supabase.co";
-        window.SUPABASE_KEY = window.SUPABASE_KEY || "sb_publishable_gshF6Y08DYJYO9c8Z_Cv2Q_9nEZr7J9";
+        const PROD_SUPABASE_URL = "https://jphzmgscxpejcyjlnspq.supabase.co";
+        const PROD_SUPABASE_KEY = "sb_publishable_gshF6Y08DYJYO9c8Z_Cv2Q_9nEZr7J9";
+
+        window.SUPABASE_URL = (window.KostConfig && window.KostConfig.SUPABASE_URL) || window.SUPABASE_URL || PROD_SUPABASE_URL;
+        window.SUPABASE_KEY = (window.KostConfig && window.KostConfig.SUPABASE_KEY) || window.SUPABASE_KEY || PROD_SUPABASE_KEY;
 
         // DOM elements
         const oldPriceInput = document.getElementById('old-price');

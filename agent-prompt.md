@@ -24,105 +24,138 @@ Déploiement visé : hébergement statique public futur (GitHub Pages / Vercel /
 - ✅ Pause canvas 3D quand onglet inactif  
 - ✅ `initLucide()` avec garde globale  
 - ✅ Formulaire modal protégé contre le reload
+- ✅ `config.js` + `config.example.js` créés, `.gitignore` mis à jour
+- ✅ `offline.html` + stratégies SW ajoutés
+- ✅ Tailwind compilé par page, CDN retiré
+- ✅ ESLint ajouté, warnings nettoyés
+
+---
+
+## Problème bloquant à résoudre en priorité (P0bis)
+
+**Symptôme :** après extraction de la config vers `config.js`, l’impression distante (GAS) et la communication Supabase sont cassées.
+
+**Hypothèses confirmées :**
+- `js/modals.js` utilise `GAS_URL` brut (globale implicite) au lieu de `window.KostConfig.GAS_URL`
+- `database.js` conserve des globales héritées (`window.SUPABASE_URL`, `window.SUPABASE_KEY`) en parallèle de `window.KostConfig`
+- Ordre de chargement `defer` : `database.js` doit être lu **après** `config.js` pour hériter des valeurs
+
+**Consigne :** corriger uniquement les chemins qui cassent la config, sans refonte ni régression fonctionnelle.
+
+---
+
+## Problème bloquant production (P0ter)
+
+**Symptôme observé en ligne :** bannière d’installation visible, mais `window.KostConfig` est vide sur `https://xoton03.github.io/kost/`.
+
+**Cause probable :** `config.js` n’est pas chargé / pas livré / pas vu sur GitHub Pages.
+
+**Règle d’or ici :** on veut que ça marche sur GitHub Pages, **pas de contrainte de sécurité**. Les clés peuvent donc être stockées en clair dans le repo.
+
+**Consigne :**
+- Option simple et retenue : stocker les credentials directement dans `config.js` à la racine.
+- `config.js` doit exposer `window.KostConfig = { SUPABASE_URL, SUPABASE_KEY, GAS_URL }` avec les **bonnes valeurs de production**.
+- `config.example.js` sert seulement de modèle ; ce n’est pas lui qui est lu en ligne.
+- Vérifier que `https://xoton03.github.io/kost/config.js` retourne bien un JS valide contenant les 3 valeurs.
+- Garantir que `window.KostConfig` est peuplé **avant** `database.js` et les modules `js/`.
+- Si ça casse encore, ajouter un fallback par module : chaque fichier réseau (`js/ui.js`, `database.js`, `js/modals.js`) doit d’abord lire `window.KostConfig`, et seulement ensuite utiliser un fallback global.
 
 ---
 
 ## Mission
 
-### A) Sécurité & configuration (P0)
+### Phase 1 — Sécurité & Config (P0)
+**Cible : hébergement GitHub Pages public `xoton03.github.io/kost`**
 
-**A1 — Extraire les clés API hors du code**
+**1.1 — Nettoyage immédiat des secrets**
+- Remplacer les valeurs dans `config.example.js` par des placeholders vides (ex: `"your-supabase-anon-key"`, `"https://script.google.com/macros/s/.../exec"`).
+- Supprimer les blocs inline Supabase/GAS des pages `tictache.html`, `ticticket.html`, `station.html` (elles chargent déjà `config.js` en `defer`).
+- Ajouter `config.js` et `config.example.js` dans `.gitignore`.
+- Conserver `config.js` en local ; il ne doit pas être poussé sur le repo public.
 
-- Déplacer `GAS_URL`, `SUPABASE_URL`, `SUPABASE_KEY` depuis `js/state.js` vers un fichier `config.js` à la racine.
-- `config.js` doit exposer `window.KostConfig = { SUPABASE_URL, SUPABASE_KEY, GAS_URL }` avec des **chaînes vides** par défaut.
-- `js/state.js` doit lire `window.KostConfig` et **ne plus hardcoder** les valeurs.
-- Créer `config.example.js` (modèle à copier) et ajouter `config.js` dans `.gitignore`.
-- Si `KostConfig` est vide au démarrage, désactiver proprement les features réseau et afficher un toast « configuration manquante ».
-
-**Vérification :**  
-`git clone` frais du projet → l’app charge sans erreur JS. Les boutons Cloud / Sync sont désactivés visuellement ou affichent un message clair.
-
----
-
-**A2 — Durcir CORS / erreurs réseau**
-
-- Dans `app.js`, `actualiserCloud()` et `backgroundSync()` : actuellement l’erreur CORS est retournée comme toast générique. Ajouter le status HTTP et l’URL queryée dans le message d’erreur pour debug.
-- Dans `js/state.js`, `supabaseFetch()` : vérifier que les headers `apikey` / `Authorization` sont cohérents avec la nouvelle config.
+**1.2 — Rotation des clés (si nécessaire)**
+- Si les clés ont été exposées, générer une nouvelle anon key Supabase et redéployer le GAS.
+- Les anciennes URL restent compatibles tant qu'elles n'ont pas été révoquées.
 
 **Vérification :**  
-Couper le réseau → cliquer sur « Actualiser » → toast explicite mentionnant CORS / offline / status.
+`git clone` frais du projet → l'app charge sans erreur JS. Les boutons Cloud / Sync sont désactivés visuellement ou affichent un message clair si `config.js` est absent.
 
 ---
 
-### B) Accessibilité & UX (P1)
+### Phase 2 — Architecture & Modularité (P1)
 
-**B1 — ARIA sur toasts et modals**
+**2.1 — Éliminer le JS inline de `tictache.html`**
+- Créer `js/tictache.js` avec : config Supabase locale (lecture de `window.KostConfig`), recherche ref → couleur → taille, rendu JsBarcode, impression locale et distante (`print_queue`).
+- Charger `js/tictache.js` en `defer` **après** `config.js`, `database.js`, `navigation.js`.
+- Retirer le `<script>` inline massif de `tictache.html`.
 
-- `js/ui.js`, `showToast()` : ajouter `role="alert"` sur l’élément toast créé.
-- `index.html` : sur `#toast-container`, ajouter `aria-live="polite"` et `role="status"`.
-- `index.html` : sur `#search-modal` et `#edit-modal`, ajouter `role="dialog"`, `aria-modal="true"`, et un `aria-labelledby` pointant vers le titre du modal.
-- Sur les boutons icônes seuls (edit/delete dans la table, copie barcode), ajouter `aria-label` explicite.
+**2.2 — Harmoniser l'endpoint GAS**
+- Choisir un seul `GAS_URL` (celui de `config.js`).
+- Si un endpoint spécifique à l'impression mobile est nécessaire, l'ajouter explicitement dans `config.js` sous `GAS_PRINT_URL`.
+- Toutes les pages doivent lire `window.KostConfig.GAS_URL` (ou `GAS_PRINT_URL`), aucune constante GAS en dur dans les HTML.
 
-**B2 — Focus trap dans les modals**
-
-- `js/modals.js` : quand un modal s’ouvre, ajouter un listener `keydown` pour confiner Tab / Shift+Tab dans le modal.
-- Quand le modal se ferme, rendre le focus au bouton qui a ouvert le modal (`btn-open-search` ou `btn-close-edit`).
-
-**Vérification :**  
-Ouvrir le modal → Tab circule uniquement sur les champs du modal → Escape ferme → focus revient au déclencheur.
-
----
-
-### C) Service Worker & offline (P2)
-
-**C1 — Stratégie de cache**
-
-- Modifier `sw.js` pour :
-  - `stale-while-revalidate` sur `.js`, `.css`, les fonts Google et les images `assets/`.
-  - `networkFirst` sur les requêtes Supabase / GAS (si possible via `fetch` event handling).
-- Créer `offline.html` (page simple : logo K.O.S.T. + « Hors ligne ») et la servir en fallback quand une navigation échoue hors ligne.
-
-**C2 — Update SW**
-
-- Dans `sw.js`, ajouter un `skipWaiting()` automatique quand une nouvelle version est installée et que l’utilisateur recharge la page (évite la bannière bloquante sur mobile).
-
-**Vérification :**  
-Mode avion → recharger → affichage `offline.html`. Réactiver le réseau → nouvelle page → assets à jour.
+**2.3 — Alignement `station.html`**
+- Vérifier que `station.html` suit le même ordre de chargement `defer` que `index.html`.
+- Extraire tout script inline vers un fichier `js/` dédié si présent.
 
 ---
 
-### D) Qualité de code (P3)
+### Phase 3 — Robustesse & UX (P1-P2)
 
-**D1 — Linter**
+**3.1 — Focus trap dans les modales**
+- Dans `js/modals.js` : quand une modale s'ouvre, ajouter un listener `keydown` pour confiner `Tab` / `Shift+Tab` dans la modale.
+- Quand la modale se ferme, rendre le focus au bouton qui a ouvert la modale (`btn-open-search` ou `btn-close-edit`).
 
-- Ajouter ESLint (`.eslintrc.json`) avec règles : `no-unused-vars`, `no-alert`, `prefer-const`.
-- Corriger les warnings existants (ex : variables inutilisées, `var` restants).
+**3.2 — Améliorer la gestion du `no-cors` GAS**
+- Après un POST `no-cors` (impression mobile ou sync), faire un GET de confirmation sur un endpoint dédié (ex: `?action=status`) pour vérifier que l'étiquette est bien en file d'impression.
+- Si la confirmation échoue, afficher un toast d'avertissement (et ne pas marquer l'item comme `Validé (Cloud)`).
 
-**D2 — Vite / build step**
+**3.3 — Précharger les fonts Google dans le SW**
+- Ajouter les URLs des fonts dans `urlsToCache` de `sw.js` (Inter, Space Grotesk, JetBrains Mono).
+- Cela évite le FOIT et le layout shift lors des premiers chargements hors ligne.
 
-- Migrer de Tailwind CDN vers Tailwind CSS via PostCSS/Vite pour réduire la taille du CSS produit et autoriser les `@apply`.
-- Garder la compatibilité PWA (manifest + SW).
-
-**Optionnel :** Si la migration Vite est trop longue, laisser le CDN mais ajouter un `style-processor` en CI.
+**3.4 — Backup automatique avant suppression de la DB**
+- Dans `database.js`, avant `db.delete()` sur `UpgradeError`, sauvegarder `catalogue_articles` dans `localStorage` (export JSON) pour permettre une restauration manuelle.
+- Afficher un toast informant l'utilisateur que la DB va être réinitialisée.
 
 ---
 
-## Règles d’intervention
+### Phase 4 — Performance & Données (P2)
 
-1. **Ne jamais casser l’existant.** Chaque modification doit être testable en rechargeant `index.html`.
-2. **Ne pas modifier** la logique métier suivante :  
-   - `performSearch()` (scan barcode → item)  
-   - `envoyerAuCloud()` / `actualiserCloud()` (GAS sync)  
+**4.1 — Indexation Dexie**
+- Vérifier que les champs les plus filtrés (`ref_article`, `code_barres`, `brand`, `couleur`, `taille`) ont des index efficaces.
+- Si `searchArticles` reste lent sur mobile, ajouter un index composite ou une table dédiée à la recherche full-text.
+
+**4.2 — Merge intelligent lors du refresh cloud**
+- Éviter de concaténer les items `En attente` à chaque refresh.
+- Comparer par `uuid` plutôt que par position.
+- Détecter les suppressions côté serveur (items présents dans le cloud mais plus dans l'inventaire local).
+
+**4.3 — Bundler JS (optionnel)**
+- Ajouter Vite ou Rollup pour grouper les scripts `js/` en un seul bundle.
+- Réduit le nombre de requêtes `defer` et améliore le temps de chargement.
+- À valider sur la taille finale et la compatibilité PWA.
+
+---
+
+## Règles d'intervention
+
+1. **Ne jamais casser l'existant.** Chaque modification doit être testable en rechargeant `index.html`.
+2. **Ne pas modifier** la logique métier suivante :
+   - `performSearch()` (scan barcode → item)
+   - `envoyerAuCloud()` / `actualiserCloud()` (GAS sync)
    - `syncCatalogue()` (`database.js`, synchro Supabase)
 3. **Conserver le design brutalist actuel.** Pas de changement de palette, de fonts ou de layout global.
 4. **Ne pas ajouter de dépendances npm** sans validation préalable.
-5. Toute modification de `index.html` doit garder l’ordre des scripts `defer` suivant :  
+5. Toute modification de `index.html` doit garder l'ordre des scripts `defer` suivant :
    `dexie.js` → `database.js` → `sync.js` → `navigation.js` → `js/state.js` → `js/ui.js` → `js/scanner.js` → `js/modals.js` → `js/bg3d.js` → `app.js` → `updater.js`.
+6. **Ne jamais supprimer de commit historique.** Si une action d'audit ou de nettoyage l'exige, proposer systématiquement une alternative non destructive (ex: rotation des secrets, réécriture limitée refusée, ajout de garde-fous).
+7. **Git** : chaque modification doit être commitée séparément avec un message explicite (ex: `feat(security): clean secrets from public repo`, `refactor: extract tictache inline JS to module`).
 
 ---
 
 ## Livrable attendu
 
-- Fichiers modifiés/créés avec un `git diff --stat` propre.
-- Un court message de commit par tâche (`feat(security): extract API keys to config.js`, `fix(a11y): add ARIA on modals and toasts`, etc.).
-- En fin de session, lister les tâches A, B, C, D cochées + celles restantes.
+- Pour chaque phase, fournir un `git diff --stat` propre.
+- Un court message de commit par tâche.
+- En fin de session, lister les tâches cochées + celles restantes.
