@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kost-v23';
+const CACHE_NAME = 'kost-v24';
 const urlsToCache = [
   './',
   './index.html',
@@ -28,7 +28,9 @@ const urlsToCache = [
   './js/bg3d.js',
   './js/history.js',
   './assets/favicon.png',
-  './assets/logo.png'
+  './assets/logo.png',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap',
+  'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap'
 ];
 
 self.addEventListener('install', event => {
