@@ -2,3 +2,5 @@ backups/
 node_modules/
 .env
 .DS_Store
+config.js
+config.example.js

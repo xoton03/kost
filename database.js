@@ -3,14 +3,22 @@
  * Centralized IndexedDB for all modules (Checkage, Tic-Tache, Flo).
  */
 
+// Global fallbacks for production (will be used if config.js is not loaded, e.g. on GitHub Pages)
+const PROD_SUPABASE_URL = "https://jphzmgscxpejcyjlnspq.supabase.co";
+const PROD_SUPABASE_KEY = "sb_publishable_gshF6Y08DYJYO9c8Z_Cv2Q_9nEZr7J9";
+const PROD_GAS_URL = "https://script.google.com/macros/s/AKfycbyLTx3UJtcZ96MNOYq7Kdkm8BDcOYzu-gLOkFDALPpdzrGmsKsUx_IdOZenLq8a0AdM-w/exec";
+const PROD_GAS_PRINT_URL = "https://script.google.com/macros/s/AKfycbxPIhweJ51FptVFcCqAX28poGYlR10TCjZaVmhOij6rPmK8H8Hl33RWg3k3jTfGJiIb/exec";
+
 window.KostConfig = window.KostConfig || {};
-window.KostConfig.SUPABASE_URL = window.KostConfig.SUPABASE_URL || window.SUPABASE_URL || "";
-window.KostConfig.SUPABASE_KEY = window.KostConfig.SUPABASE_KEY || window.SUPABASE_KEY || "";
-window.KostConfig.GAS_URL = window.KostConfig.GAS_URL || window.GAS_URL || "";
+window.KostConfig.SUPABASE_URL = window.KostConfig.SUPABASE_URL || window.SUPABASE_URL || PROD_SUPABASE_URL;
+window.KostConfig.SUPABASE_KEY = window.KostConfig.SUPABASE_KEY || window.SUPABASE_KEY || PROD_SUPABASE_KEY;
+window.KostConfig.GAS_URL = window.KostConfig.GAS_URL || window.GAS_URL || PROD_GAS_URL;
+window.KostConfig.GAS_PRINT_URL = window.KostConfig.GAS_PRINT_URL || window.GAS_PRINT_URL || PROD_GAS_PRINT_URL;
 
 window.SUPABASE_URL = window.KostConfig.SUPABASE_URL;
 window.SUPABASE_KEY = window.KostConfig.SUPABASE_KEY;
 window.GAS_URL = window.KostConfig.GAS_URL;
+window.GAS_PRINT_URL = window.KostConfig.GAS_PRINT_URL;
 
 // Initialize Dexie
 // eslint-disable-next-line no-redeclare
