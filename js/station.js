@@ -1,6 +1,21 @@
 // K.O.S.T. - Station Module Logic
 
 window.addEventListener('DOMContentLoaded', () => {
+    // Dismiss user gesture warning banner on any page interaction
+    const gestureWarning = document.getElementById('gesture-warning');
+    if (gestureWarning) {
+        const dismissWarning = () => {
+            gestureWarning.style.opacity = '0';
+            setTimeout(() => {
+                gestureWarning.style.display = 'none';
+            }, 300);
+            window.removeEventListener('click', dismissWarning);
+            window.removeEventListener('keydown', dismissWarning);
+        };
+        window.addEventListener('click', dismissWarning);
+        window.addEventListener('keydown', dismissWarning);
+    }
+
     // ============================================================
     // CONFIG
     // ============================================================
@@ -166,6 +181,9 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     async function executePrintJob(job) {
+        // Parse quantity robustly
+        const quantity = parseInt(job.quantity, 10) || 1;
+
         // 1. Claim the job (mark as 'printing') to prevent other stations from taking it
         try {
             await markJobPrinting(job.id, job.isTicketTable, job.isFloTable);
@@ -207,15 +225,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
         if (isPromo && promoData) {
             if (jobDetailsEl) jobDetailsEl.textContent = `🏷️ Promo: ${promoData.reference} (${promoData.discount})`;
-            if (jobQtyEl) jobQtyEl.textContent = `${job.quantity} étiquette${job.quantity > 1 ? 's' : ''}`;
+            if (jobQtyEl) jobQtyEl.textContent = `${quantity} étiquette${quantity > 1 ? 's' : ''}`;
             if (jobBarcodeEl) jobBarcodeEl.textContent = `Ancien: ${formatPrice(promoData.old_price)} ➔ Nouveau: ${formatPrice(promoData.new_price)}`;
         } else if (isFlo && floData) {
             if (jobDetailsEl) jobDetailsEl.textContent = `🏷️ Flo: ${floData.reference}`;
-            if (jobQtyEl) jobQtyEl.textContent = `${job.quantity} étiquette${job.quantity > 1 ? 's' : ''}`;
+            if (jobQtyEl) jobQtyEl.textContent = `${quantity} étiquette${quantity > 1 ? 's' : ''}`;
             if (jobBarcodeEl) jobBarcodeEl.textContent = `Prix: ${floData.price}`;
         } else {
             if (jobDetailsEl) jobDetailsEl.textContent = job.details;
-            if (jobQtyEl) jobQtyEl.textContent = `${job.quantity} étiquette${job.quantity > 1 ? 's' : ''}`;
+            if (jobQtyEl) jobQtyEl.textContent = `${quantity} étiquette${quantity > 1 ? 's' : ''}`;
             if (jobBarcodeEl) jobBarcodeEl.textContent = `Code-barres : ${job.barcode}`;
         }
 
@@ -224,7 +242,7 @@ window.addEventListener('DOMContentLoaded', () => {
         if (printZone) {
             printZone.innerHTML = '';
 
-            for (let i = 0; i < job.quantity; i++) {
+            for (let i = 0; i < quantity; i++) {
                 const label = document.createElement('div');
                 
                 if (isPromo && promoData) {
@@ -289,7 +307,7 @@ window.addEventListener('DOMContentLoaded', () => {
         // 4. Render barcodes (if not promo and not flo)
         if (!isPromo && !isFlo) {
             /* global JsBarcode */
-            for (let i = 0; i < job.quantity; i++) {
+            for (let i = 0; i < quantity; i++) {
                 const barcodeOpts = {
                     width: 2, height: 55,
                     displayValue: true, fontSize: 11,
@@ -303,6 +321,9 @@ window.addEventListener('DOMContentLoaded', () => {
                 }
             }
         }
+
+        // Wait for DOM layout and rendering to complete before printing
+        await new Promise(r => setTimeout(r, 300));
 
         // 5. Trigger print
         window.print();
@@ -352,14 +373,40 @@ window.addEventListener('DOMContentLoaded', () => {
         }
 
         const item = document.createElement('div');
-        item.className = 'history-item';
+        item.className = 'history-item flex items-center justify-between gap-2';
         item.innerHTML = `
-            <span class="history-time">${time}</span>
-            <span class="history-details">${displayName}</span>
-            <span class="history-qty">×${job.quantity}</span>
-            <span class="history-status">✓ OK</span>
+            <div class="flex items-center gap-2 flex-1 min-w-0">
+                <span class="history-time shrink-0">${time}</span>
+                <span class="history-details truncate">${displayName}</span>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <span class="history-qty">×${job.quantity}</span>
+                <button class="btn-reprint bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-2 py-0.5 rounded border border-slate-700 hover:border-slate-500 text-[8px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer" title="Réimprimer cet article">
+                    <i data-lucide="printer" style="width:10px;height:10px;"></i>
+                    <span>Imp.</span>
+                </button>
+                <span class="history-status">✓ OK</span>
+            </div>
         `;
+
+        // Click handler to manually reprint the job
+        const reprintBtn = item.querySelector('.btn-reprint');
+        if (reprintBtn) {
+            reprintBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                await executePrintJob(job);
+            });
+        }
+
         list.insertBefore(item, list.firstChild);
+
+        // Render lucide printer icon on the reprint button
+        if (window.lucide) {
+            window.lucide.createIcons({
+                attrs: { class: 'lucide' },
+                nameAttr: 'data-lucide'
+            });
+        }
     }
 
     let startupChecked = false;
